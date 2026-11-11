@@ -7,7 +7,7 @@ footer(site);
 const names = { airbnb: "Airbnb", booking: "Booking.com", direct: "Direct" };
 const statusText = { ok: "Synced", demo: "Demo data (no iCal link yet)", error: "Sync failed, check the link", "not-configured": "No iCal link" };
 const today = todayISO();
-$("#updated").textContent = avail.generated ? `Last sync ${timeAgo(avail.generated)} (${new Date(avail.generated).toLocaleString()}).` : "Not synced yet.";
+$("#updated").textContent = avail.updated ? `Calendars are checked every hour. Bookings last changed ${timeAgo(avail.updated)} (${new Date(avail.updated).toLocaleString()}).` : "Not synced yet.";
 const hr = new Date().getHours();
 $("#greet").textContent = `Good ${hr < 12 ? "morning" : hr < 18 ? "afternoon" : "evening"}, ${site.host?.name?.split(" ")[0] || "host"}`;
 

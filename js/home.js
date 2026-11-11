@@ -36,7 +36,7 @@ function renderUnits() {
           <span class="muted">${esc(p.name)} · ${esc(p.building)}</span>
           <span class="muted">${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · pool access</span>
           <span class="muted">${when}</span>
-          <span class="price" style="margin-top:4px">${st ? `<b>${money(site, st.price)}</b> ${type === "monthly" ? "month" : "night"}` : `<span class="muted">Not offered as a ${type === "monthly" ? "monthly rental" : "short stay"}</span>`}</span>
+          <span class="price" style="margin-top:4px">${st ? `${st.confirmed ? "" : "From "}<b>${money(site, st.price)}</b> ${type === "monthly" ? "month" : "night"}` : `<span class="muted">Not offered as a ${type === "monthly" ? "monthly rental" : "short stay"}</span>`}</span>
         </div>
       </a>`;
   });
@@ -89,7 +89,7 @@ if (r) {
 }
 
 // Perks
-const eb = first.promos?.earlyBird;
+const eb = first.promos?.earlyBird?.confirmed ? first.promos.earlyBird : null;
 $("#perks").innerHTML = [
   [icons.tag, "No platform fees", "Skip the service fees that booking platforms add on top of the nightly rate."],
   eb && [icons.cal, `${eb.percent}% early-bird`, `Book ${eb.daysAhead}+ days before check-in and we take ${eb.percent}% off automatically.`],

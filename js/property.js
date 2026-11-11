@@ -1,6 +1,6 @@
 import {
   loadData, $, $$, esc, money, plural, pic, demoBar, footer, channelList, openChannel, toast, track, icons, amenityIcon, starsHTML,
-  bookedNights, rangeIsFree, monthHTML, todayISO, nightsBetween, pretty, timeAgo, addDays,
+  bookedNights, rangeIsFree, monthHTML, todayISO, nightsBetween, pretty, addDays,
 } from "./common.js";
 
 const { site, avail } = await loadData();
@@ -14,7 +14,12 @@ const booked = bookedNights(avail, p.id);
 const today = todayISO();
 const photos = p.tour.flatMap((r) => r.photos.map((ph) => ({ ...ph, room: r.room })));
 const airbnbUrl = p.channels?.airbnb?.url;
-const earlyBird = p.promos?.earlyBird;
+// Promos and rates only become promises once the owner sets "confirmed": true in site.json.
+const earlyBird = p.promos?.earlyBird?.confirmed ? p.promos.earlyBird : null;
+const firm = () => !!p.stayTypes[state.type].confirmed;
+// Only name a platform as synced once its iCal link is set (or in demo mode, where dates are samples).
+const syncedWith = Object.entries(p.channels || {}).filter(([, c]) => c.ical || (site.demo && c.url)).map(([k]) => ({ airbnb: "Airbnb", booking: "Booking.com" })[k] || k).join(" & ") || "our bookings";
+const hostFirst = () => host.name.split(" ")[0];
 const parking = p.addons?.parking;
 const long = { month: "short", day: "numeric", year: "numeric" };
 document.title = `${p.title} | ${site.brand}`;
@@ -98,7 +103,7 @@ $("#main").innerHTML = `
         <h2 id="cal-title"></h2>
         <div class="muted small" id="cal-sub" style="margin-bottom:24px"></div>
         <div class="cal-wrap" data-cal="inline"></div>
-        <div class="cal-foot"><span class="muted xs">Synced with Airbnb${p.channels?.booking?.url || p.channels?.booking?.ical ? " & Booking.com" : ""}${avail.generated ? ` · ${timeAgo(avail.generated)}` : ""}</span><button class="u" data-clear>Clear dates</button></div>
+        <div class="cal-foot"><span class="muted xs">Synced hourly with ${syncedWith}</span><button class="u" data-clear>Clear dates</button></div>
       </section>
 
       ${p.videos?.length ? `<section class="block">
@@ -315,10 +320,11 @@ function renderBook() {
   const priceHTML = earlyActive()
     ? `<s>${money(site, st.price)}</s>${money(site, st.price * (1 - earlyBird.percent / 100))} <span>${unit}</span>`
     : `${money(site, st.price)} <span>${unit}</span>`;
+  const rateNote = firm() ? "" : `<p class="rate-note">Estimated rate. ${esc(hostFirst())} confirms the final price in chat before you pay anything.</p>`;
   const types = Object.keys(p.stayTypes);
   $("#book").innerHTML = `
     ${types.length > 1 ? `<div class="toggle" role="group" aria-label="Stay type">${types.map((t) => `<button type="button" data-type="${t}" aria-pressed="${t === state.type}">${t === "monthly" ? "Monthly rental" : "Short stay"}</button>`).join("")}</div>` : ""}
-    <div class="book-price">${priceHTML}</div>
+    <div class="book-price">${firm() ? "" : "<small>From</small> "}${priceHTML}</div>${rateNote}
     <div class="book-box">
       <div class="book-dates">
         <button type="button" data-open-pop="in" class="${!state.in ? "active" : ""}"><small>Check-in</small><span class="${state.in ? "set" : ""}">${state.in ? pretty(state.in, { month: "numeric", day: "numeric", year: "numeric" }) : "Add date"}</span></button>
@@ -339,10 +345,10 @@ function renderBook() {
     <button class="btn btn-primary btn-block btn-lg" id="reserve">${ready ? "Request to book" : "Check availability"}</button>
     ${ready ? `<p class="charge-note">You won't be charged yet</p>
       <div class="estimate">${est.lines.map(([l, v, c]) => `<div class="${c || ""}"><span class="${c ? "" : "u"}" style="font-weight:400">${esc(l)}</span><span>${v < 0 ? "−" : ""}${money(site, Math.abs(v))}</span></div>`).join("")}
-      <div class="total"><span>Total</span><span>${money(site, est.total)}</span></div></div>` : ""}
+      <div class="total"><span>${firm() ? "Total" : "Estimated total"}</span><span>${money(site, est.total)}</span></div></div>` : ""}
     ${airbnbUrl ? `<div class="alt-book muted">Prefer Airbnb? <a class="u" href="${esc(airbnbUrl)}" target="_blank" rel="noopener" data-ota="airbnb">Book there ↗</a></div>` : ""}
     ${p.channels?.booking?.url ? `<div class="alt-book muted" style="margin-top:4px">Or on <a class="u" href="${esc(p.channels.booking.url)}" target="_blank" rel="noopener" data-ota="booking">Booking.com ↗</a></div>` : ""}
-    <div class="sync"><span class="dot"></span>Live calendar · updated ${timeAgo(avail.generated) || "recently"}</div>`;
+    <div class="sync"><span class="dot"></span>Live calendar · synced hourly with ${syncedWith}</div>`;
 }
 
 $("#book").addEventListener("click", (e) => {
@@ -390,8 +396,10 @@ function requestMessage() {
     `Check-in: ${pretty(state.in, { weekday: "short", ...long })}`,
     `Checkout: ${pretty(state.out, { weekday: "short", ...long })}`,
     `${plural(est.n, "night")} · ${plural(state.guests, "guest")}${state.parking ? " · with parking" : ""}`,
-    `Estimated total: ${money(site, est.total)}${earlyActive() ? ` (incl. ${earlyBird.percent}% early-bird)` : ""}`,
-    `Is it available?`,
+    firm()
+      ? `Total: ${money(site, est.total)}${earlyActive() ? ` (incl. ${earlyBird.percent}% early-bird)` : ""}
+Is it available?`
+      : `Is it available, and what would the total be?`,
   ].join("\n");
 }
 function openRequest(general = false) {
@@ -399,9 +407,9 @@ function openRequest(general = false) {
   const msg = general ? `Hi ${host.name.split(" ")[0]}! I have a question about ${p.name}.` : requestMessage();
   $("#req-title").textContent = est ? "Request to book" : "Message the host";
   $("#req-body").innerHTML = `
-    ${est ? `<div class="req-summary">${pic(p.cover, p.name, { sizes: "112px" })}<div><b>${esc(p.title)}</b><div class="muted small">${pretty(state.in, long)} – ${pretty(state.out, long)} · ${plural(state.guests, "guest")}</div><div style="margin-top:6px"><b>${money(site, est.total)}</b> <span class="muted small">total</span></div></div></div>` : ""}
+    ${est ? `<div class="req-summary">${pic(p.cover, p.name, { sizes: "112px" })}<div><b>${esc(p.title)}</b><div class="muted small">${pretty(state.in, long)} – ${pretty(state.out, long)} · ${plural(state.guests, "guest")}</div><div style="margin-top:6px">${firm() ? "" : "<span class=\"muted small\">about</span> "}<b>${money(site, est.total)}</b> <span class="muted small">${firm() ? "total" : "estimated total"}</span></div></div></div>` : ""}
     <h3>${est ? "Send your request" : "Pick how to reach us"}</h3>
-    <p class="muted small" style="margin:0">${est ? `${esc(host.name.split(" ")[0])} confirms availability, then sends GCash or bank details for the deposit. Nothing is charged until you agree.` : esc(site.contact.responseTime) + "."}</p>
+    <p class="muted small" style="margin:0">${est ? `${esc(hostFirst())} confirms availability${firm() ? "" : " and the final price"}, then sends GCash or bank details for the deposit. Nothing is charged until you agree.` : esc(site.contact.responseTime) + "."}</p>
     <div class="req-msg" aria-label="Message preview">${esc(msg)}</div>
     <div class="channels-grid">${channelList(site, msg).map((c) => `<button class="ch-btn" data-ch="${c.key}"><i style="background:${c.color}">${c.icon}</i><span>${esc(c.label)}<small>${esc(c.sub || "")}</small></span></button>`).join("")}</div>`;
   $("#req-body").onclick = (e) => {
@@ -419,7 +427,7 @@ function renderMbar() {
   const est = estimate();
   $("#mbar").innerHTML = `
     <div>
-      <div class="p">${est ? money(site, est.total) : money(site, st.price)} <span>${est ? "total" : state.type === "monthly" ? "month" : "night"}</span></div>
+      <div class="p">${est ? money(site, est.total) : money(site, st.price)} <span>${est ? (firm() ? "total" : "est. total") : state.type === "monthly" ? "month" : "night"}</span></div>
       <button class="d" data-mdates>${est ? `${pretty(state.in)} – ${pretty(state.out)}` : "Add dates"}</button>
     </div>
     <button class="btn btn-primary" data-mreserve>${est ? "Reserve" : "Check availability"}</button>`;

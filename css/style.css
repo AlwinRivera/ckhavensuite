@@ -302,6 +302,8 @@ a.chip:hover { text-decoration: underline; }
 .book-price { font-size: 1.4rem; font-weight: 600; }
 .book-price span { font-weight: 400; font-size: 1rem; }
 .book-price s { color: var(--muted); font-weight: 400; margin-right: 6px; font-size: 1.1rem; }
+.book-price small { font-weight: 400; font-size: 0.95rem; color: var(--muted); }
+.rate-note { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
 .book-box { border: 1px solid var(--line-strong); border-radius: var(--r-sm); margin: 16px 0; }
 .book-dates { display: grid; grid-template-columns: 1fr 1fr; }
 .book-dates button { text-align: left; background: none; border: 0; padding: 10px 12px; cursor: pointer; border-radius: var(--r-sm); }

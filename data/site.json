@@ -65,10 +65,10 @@
         { "icon": "spark", "title": "Spotless & welcoming", "text": "Guests highlight the clean, cozy space and a responsive host." }
       ],
       "stayTypes": {
-        "nightly": { "price": 2500, "minNights": 1 },
-        "monthly": { "price": 23000, "minNights": 30, "note": "Utilities billed separately" }
+        "nightly": { "price": 1615, "minNights": 1, "confirmed": false, "source": "Booking.com listing rate, Nov 2026" },
+        "monthly": { "price": 23000, "minNights": 30, "note": "Utilities billed separately", "confirmed": false, "source": "Facebook post" }
       },
-      "promos": { "earlyBird": { "percent": 10, "daysAhead": 7, "label": "Early-bird: 10% off when you book 7+ days before check-in" } },
+      "promos": { "earlyBird": { "confirmed": false, "percent": 10, "daysAhead": 7, "label": "Early-bird: 10% off when you book 7+ days before check-in" } },
       "addons": { "parking": { "label": "Parking", "price": 300, "per": "night" } },
       "cover": "assets/img/bedroom-lounge.jpg",
       "hero": "assets/img/bedroom-wide.jpg",
@@ -137,7 +137,7 @@
       },
       "channels": {
         "airbnb": { "url": "https://www.airbnb.com/rooms/50234618", "ical": "" },
-        "booking": { "url": "", "ical": "" }
+        "booking": { "url": "https://www.booking.com/hotel/ph/ck-haven-hot-shower-wifi-smart-tv-outdoor-garden.html", "ical": "" }
       }
     }
   ]

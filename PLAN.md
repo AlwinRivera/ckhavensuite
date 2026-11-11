@@ -110,21 +110,24 @@ Pulled from the public Airbnb listing, FB page and Instagram:
 - Host: Khandy Lorraine, 5 yrs hosting, co-host Elizabeth, 100% response rate, replies within an hour
 - Check-in 2–5 PM, checkout before 12 PM, self check-in with lockbox; parking ₱300/night
 - Contact: 0906 506 2589, ckoasishaven@gmail.com, FB `CKHaven1133`, IG `ckoasishaven`
-- Promo (FB reel): 10% off when booking 7+ days before check-in
+- Promo (FB reel): 10% off when booking 7+ days before check-in (hidden on the site until confirmed)
+- Booking.com listing: https://www.booking.com/hotel/ph/ck-haven-hot-shower-wifi-smart-tv-outdoor-garden.html (rated 7.7 from 3 reviews; shows from ₱1,615/night in Dec 2026)
 - Logo: FB profile picture (cropped mark in `assets/brand/`)
 
 Still placeholder or unconfirmed:
-- **Nightly price ₱2,500** (made up). Monthly **₱23,000** is read from a low-res FB reel
-- Booked dates (sample data until the Airbnb iCal export link is added)
+- **Nightly ₱1,615** is the Booking.com rate, not his direct rate. Monthly **₱23,000** is read from a low-res FB reel.
+  Both are shown as "From … · estimated", and booking requests ask him for the total instead of quoting one.
+  Set `"confirmed": true` on a rate (and on `promos.earlyBird`) in `site.json` once he confirms it.
+- Booked dates (sample data until the Airbnb and Booking.com iCal export links are added)
 - Whether the number is on WhatsApp and Viber, or just calls and texts
 - Kids' play area (from FB photo captions); fire extinguisher (seen in a photo)
 - Living room, kitchen-counter and bathroom photos are stills taken from the walkthrough videos
 
 ## 5. Questions for Uncle Xtian
 
-1. Real nightly rate, weekend rate, monthly rate (₱23k?), cleaning fee, deposit
+1. Direct nightly rate (Booking.com shows ₱1,615), weekend rate, monthly rate (₱23k?), cleaning fee, deposit, and is the 10% early-bird still on?
 2. Airbnb calendar iCal export link (Airbnb → Calendar → Availability → Connect calendars → Export)
-3. Is the unit on Booking.com too? If so, the listing link and its iCal export link
+3. Booking.com iCal export link (Extranet → Rates & availability → Sync calendars)
 4. Is 0906 506 2589 on WhatsApp and/or Viber?
 5. Original high-res photos (the Airbnb set: living room with TV, pool, bathroom) and a host photo
 6. House rules (smoking, pets, visitors, quiet hours) and cancellation terms for direct bookings

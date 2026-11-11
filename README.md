@@ -18,6 +18,8 @@ Then open http://localhost:8080.
 - Units, prices, photos, contacts, iCal links: `data/site.json`
 - Direct bookings: `data/direct-bookings.json`
 - Refresh calendars by hand: `node scripts/sync-calendars.mjs` (GitHub Actions also runs it every hour)
+- Prices show as estimates ("From ₱…", "estimated total") and requests ask the host for the total until
+  that rate has `"confirmed": true` in `site.json`. Same for `promos.earlyBird`, which stays hidden until confirmed.
 - Set `"demo": false` in `site.json` when going live. This removes the demo banner and the sample Airbnb/Booking dates.
 
 ## Images
@@ -37,3 +39,7 @@ It counts page views plus clicks on "Request to book", each contact channel, Sha
 1. Push this folder to a **public** GitHub repo
 2. Settings → Pages → Deploy from branch → `main` / root
 3. Settings → Actions → General → Workflow permissions → **Read and write** (lets the sync job commit)
+
+The sync job checks every hour but only commits when booked dates actually change (sample demo dates move once a week).
+GitHub pauses scheduled workflows in a repo with no activity for 60 days. If the calendar stops updating, open
+Actions → Sync calendars → Enable workflow (or push any commit).

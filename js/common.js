@@ -118,7 +118,7 @@ export function demoBar(site) {
   if (!site.demo) return;
   const bar = document.createElement("div");
   bar.className = "demo-bar";
-  bar.innerHTML = "<b>Demo preview</b>: nightly price and booked dates are samples until the owner confirms them.";
+  bar.innerHTML = "<b>Demo preview</b>: booked dates are samples and prices are estimates until the owner confirms them.";
   document.body.prepend(bar);
 }
 
