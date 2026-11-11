@@ -23,6 +23,9 @@ const hostFirst = () => host.name.split(" ")[0];
 const parking = p.addons?.parking;
 const long = { month: "short", day: "numeric", year: "numeric" };
 document.title = `${p.title} | ${site.brand}`;
+const secbar = Object.assign(document.createElement("nav"), { className: "secbar" });
+secbar.setAttribute("aria-label", "Sections");
+document.body.append(secbar);
 
 // ---------------- state ----------------
 const state = {
@@ -47,21 +50,32 @@ const state = {
 
 // ---------------- page ----------------
 const r = p.rating;
-const ratingLink = r ? `<a href="#reviews" class="rating-inline">${icons.star} ${r.value}</a><span class="sep"></span><a href="#reviews" class="u" style="font-weight:600">${r.count} reviews</a>` : "";
+// Laurel branch: a curved stem with pointed leaves, big on the outside, small on the inside.
+const leaf = (x, y, a, s = 1) => `<path d="M0 0C-2.6-2.2-2.6-7 0-9.5C2.6-7 2.6-2.2 0 0Z" transform="translate(${x} ${y}) rotate(${a}) scale(${s})"/>`;
+const laurel = `<svg class="laurel" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true"><path d="M14 39C8 32 6.5 20 8.2 5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>${
+  [[13, 35, -58, 40], [10.6, 28, -50, 34], [9.1, 21, -42, 28], [8.4, 14, -32, 22]].map(([x, y, a, b]) => leaf(x, y, a) + leaf(x, y, b, 0.75)).join("")
+}${leaf(8.2, 6, -10)}</svg>`;
+const laurels = (inner) => `<div class="laurels">${laurel}${inner}${laurel.replace("class=\"laurel\"", "class=\"laurel flip\"")}</div>`;
 
 $("#main").innerHTML = `
-  <div class="listing-head">
+  <div class="m-hero">
+    <div class="m-track" id="m-track">${photos.map((ph, i) => `<button type="button" data-photo="${i}" aria-label="Photo ${i + 1} of ${photos.length}: ${esc(ph.alt)}">${pic(ph.src, ph.alt, { sizes: "100vw", lazy: i > 0, cls: i ? "" : "vt-hero" })}</button>`).join("")}</div>
+    <a class="m-fab m-back" href="index.html" aria-label="Back to all stays">${icons.chevL}</a>
+    <div class="m-fabs"><button type="button" class="m-fab" data-share aria-label="Share">${icons.share}</button><button type="button" class="m-fab" data-save aria-label="Save">${icons.heart}</button></div>
+    <span class="m-count" id="m-count" aria-hidden="true">1 / ${photos.length}</span>
+  </div>
+
+  <div class="listing-head" id="top">
     <h1>${esc(p.title)}</h1>
     <div class="row head-actions">
-      <button class="icon-btn" id="share">${icons.share} Share</button>
-      <button class="icon-btn" id="save">${icons.heart} <span>Save</span></button>
+      <button class="icon-btn" data-share>${icons.share} Share</button>
+      <button class="icon-btn" data-save>${icons.heart} <span>Save</span></button>
     </div>
   </div>
 
   <div class="gallery">
-    ${photos.slice(0, 5).map((ph, i) => `<button type="button" data-photo="${i}" aria-label="Open photo: ${esc(ph.alt)}">${pic(ph.src, ph.alt, { sizes: i ? "25vw" : "(max-width:760px) 100vw, 50vw", lazy: i > 0 })}</button>`).join("")}
+    ${photos.slice(0, 5).map((ph, i) => `<button type="button" data-photo="${i}" aria-label="Open photo: ${esc(ph.alt)}">${pic(ph.src, ph.alt, { sizes: i ? "25vw" : "50vw", lazy: i > 0, cls: i ? "" : "vt-hero" })}</button>`).join("")}
     <button type="button" class="all" data-tour>${icons.grid} Show all photos</button>
-    <span class="count">1 / ${photos.length}</span>
   </div>
 
   <div class="prop-layout">
@@ -69,8 +83,8 @@ $("#main").innerHTML = `
       <section class="block overview">
         <h2>${esc(p.kind)} in ${esc(p.city)}</h2>
         <div class="muted">${plural(p.guests, "guest")} · ${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · ${plural(p.baths, "bath")}</div>
-        ${r ? `<div class="row" style="margin-top:6px">${ratingLink}<span class="sep"></span><span class="muted small">on ${esc(r.source)}</span></div>` : ""}
-      </section>
+        </section>
+      ${r ? `<a class="rating-card" href="#reviews">${laurels(`<b>${r.value}</b>`)}<div class="rc-text"><b>Loved by guests</b><span>Rated ${r.value} out of 5 by ${r.count} guests on ${esc(r.source)}</span></div><div class="rc-num"><b>${r.count}</b><span>Reviews</span></div></a>` : ""}
 
       <section class="block host-mini">
         <div class="avatar">${host.photo ? `<img src="${esc(host.photo)}" alt="">` : esc(host.initial)}<span class="verified">${icons.check}</span></div>
@@ -93,7 +107,7 @@ $("#main").innerHTML = `
         <div class="sleep">${p.sleeping.map((s) => `<figure>${pic(s.photo, s.room, { sizes: "300px" })}<b>${esc(s.room)}</b><span class="muted small">${esc(s.beds)}</span></figure>`).join("")}</div>
       </section>
 
-      <section class="block">
+      <section class="block" id="amenities">
         <h2>What this place offers</h2>
         <ul class="amenities">${p.topAmenities.map((a) => `<li>${amenityIcon(a)}<span>${esc(a)}</span></li>`).join("")}</ul>
         <button class="btn btn-ghost" id="amen-open">Show all ${p.amenities.filter((g) => !g.missing).reduce((n, g) => n + g.items.length, 0)} amenities</button>
@@ -119,7 +133,7 @@ $("#main").innerHTML = `
   </div>
 
   ${r ? `<section class="block" id="reviews" style="border-top:1px solid var(--line)">
-    <div class="rating-big">${icons.star} ${r.value} · ${r.count} reviews</div>
+    <div class="rating-hero">${laurels(`<b>${r.value}</b>`)}<h2>Loved by guests</h2><p class="muted">Rated ${r.value} out of 5 by ${r.count} guests on ${esc(r.source)}.</p></div>
     <div class="cats">${Object.entries(r.categories).map(([k, v]) => `<div class="cat"><small>${esc(k)}</small><b>${v.toFixed(1)}</b><div class="bar"><i style="width:${(v / 5) * 100}%"></i></div></div>`).join("")}</div>
     <div class="reviews">${r.reviews.map((rv) => `
       <article class="review">
@@ -185,6 +199,8 @@ $("#main").innerHTML = `
       </ul></div>
     </div>
   </section>`;
+
+$("#main").removeAttribute("aria-busy");
 
 // ---------------- pricing ----------------
 function estimate() {
@@ -317,14 +333,16 @@ function renderBook() {
   const unit = state.type === "monthly" ? "month" : "night";
   const est = estimate();
   const ready = !!est;
-  const priceHTML = earlyActive()
+  const priceHTML = est
+    ? `${firm() ? "" : "<small>About</small> "}${money(site, est.total)} <span>for ${plural(est.n, "night")}</span>`
+    : earlyActive()
     ? `<s>${money(site, st.price)}</s>${money(site, st.price * (1 - earlyBird.percent / 100))} <span>${unit}</span>`
     : `${money(site, st.price)} <span>${unit}</span>`;
   const rateNote = firm() ? "" : `<p class="rate-note">Estimated rate. ${esc(hostFirst())} confirms the final price in chat before you pay anything.</p>`;
   const types = Object.keys(p.stayTypes);
   $("#book").innerHTML = `
     ${types.length > 1 ? `<div class="toggle" role="group" aria-label="Stay type">${types.map((t) => `<button type="button" data-type="${t}" aria-pressed="${t === state.type}">${t === "monthly" ? "Monthly rental" : "Short stay"}</button>`).join("")}</div>` : ""}
-    <div class="book-price">${firm() ? "" : "<small>From</small> "}${priceHTML}</div>${rateNote}
+    <div class="book-price">${firm() || est ? "" : "<small>From</small> "}${priceHTML}</div>${rateNote}
     <div class="book-box">
       <div class="book-dates">
         <button type="button" data-open-pop="in" class="${!state.in ? "active" : ""}"><small>Check-in</small><span class="${state.in ? "set" : ""}">${state.in ? pretty(state.in, { month: "numeric", day: "numeric", year: "numeric" }) : "Add date"}</span></button>
@@ -381,8 +399,9 @@ document.addEventListener("click", (e) => {
   if (pop && !pop.hidden && !e.target.closest("#pop") && !e.target.closest("[data-open-pop]") && !e.target.closest(".day")) pop.hidden = true;
 });
 
+const sheetMode = matchMedia("(max-width: 960px)");
 function openDates() {
-  if (matchMedia("(max-width: 960px)").matches) return $("#calendar").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (sheetMode.matches) return openSheet();
   $("#pop").hidden = false;
   renderCals();
 }
@@ -433,12 +452,43 @@ function renderMbar() {
     <button class="btn btn-primary" data-mreserve>${est ? "Reserve" : "Check availability"}</button>`;
 }
 $("#mbar").addEventListener("click", (e) => {
-  if (e.target.closest("[data-mdates]")) return $("#calendar").scrollIntoView({ behavior: "smooth" });
-  if (e.target.closest("[data-mreserve]")) return estimate() ? openRequest() : $("#calendar").scrollIntoView({ behavior: "smooth" });
+  if (e.target.closest("[data-mdates]")) return openSheet();
+  if (e.target.closest("[data-mreserve]")) return estimate() ? openRequest() : openSheet();
 });
 
 // ---------------- render ----------------
-function renderCals() { $$("[data-cal]").forEach((el) => (el.innerHTML = calHTML())); }
+function renderCals() { $$("[data-cal]").forEach((el) => (el.innerHTML = el.dataset.cal === "sheet" ? sheetCalHTML() : calHTML())); }
+
+// ---------------- dates sheet (phones): months scroll vertically, like a native app ----------------
+function sheetCalHTML() {
+  const now = new Date();
+  let html = "";
+  for (let i = 0; i < 12; i++) { const m = new Date(now.getFullYear(), now.getMonth() + i, 1); html += monthHTML(m.getFullYear(), m.getMonth(), dayClass); }
+  return `<div class="cal-months">${html}</div>`;
+}
+const sheet = $("#dates");
+function renderSheet() {
+  const est = estimate();
+  $("#ds-title").textContent = est ? plural(est.n, "night") : selectingOut() ? "Select checkout date" : "Select check-in date";
+  $("#ds-sub").innerHTML = calHint().replace(/<button[^>]*data-jump[^>]*>.*?<\/button>/, ""); // the sheet scrolls to the opening itself
+  $("#ds-total").innerHTML = est ? `<b>${firm() ? "" : "About "}${money(site, est.total)}</b><span class="muted xs">${firm() ? "total" : "estimated total"}</span>` : "";
+  $("#ds-done").textContent = est ? "Save dates" : "Close";
+}
+function scrollSheetTo(d) {
+  const m = d && sheet.querySelector(`[data-month="${d.slice(0, 7)}"]`);
+  if (m) sheet.querySelector(".ds-body").scrollTop = m.offsetTop - 8;
+}
+function openSheet() {
+  renderCals(); renderSheet();
+  sheet.showModal();
+  scrollSheetTo(state.in || firstStart());
+  track("dates-sheet");
+}
+$("#ds-done").addEventListener("click", () => sheet.close());
+sheet.addEventListener("click", (e) => {
+  if (e.target === sheet) sheet.close();
+  if (e.target.closest("[data-clear]")) setTimeout(() => scrollSheetTo(firstStart()), 0);
+});
 function render() {
   const est = estimate();
   $("#cal-title").textContent = est ? `${plural(est.n, "night")} in Cagayan de Oro` : selectingOut() ? "Select checkout date" : "Select check-in date";
@@ -448,6 +498,8 @@ function render() {
   if (popOpen && !(state.in && state.out)) $("#pop").hidden = false;
   renderCals();
   renderMbar();
+  renderSheet();
+  renderSecbar();
   const q = new URLSearchParams({ id: p.id, type: state.type, guests: state.guests });
   if (state.in && state.out) { q.set("in", state.in); q.set("out", state.out); }
   history.replaceState(null, "", `?${q}`);
@@ -464,18 +516,22 @@ $("#amen-body").innerHTML = p.amenities.map((g) => `<h3 style="margin-top:8px">$
 $("#amen-open").addEventListener("click", () => $("#amen").showModal());
 
 // ---------------- share / save ----------------
-$("#share").addEventListener("click", async () => {
+$$("[data-share]").forEach((b) => b.addEventListener("click", async () => {
   const data = { title: p.title, text: `${p.title}, rated ${r?.value} on ${r?.source}`, url: location.href };
   try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(location.href); toast("Link copied. Share it with your travel buddies!"); } track("share"); } catch {}
-});
+}));
 const saveKey = `ckhaven:saved:${p.id}`;
 const getSaved = () => { try { return localStorage.getItem(saveKey) === "1"; } catch { return false; } };
-function paintSave() { const s = getSaved(); $("#save").classList.toggle("saved", s); $("#save span").textContent = s ? "Saved" : "Save"; }
-$("#save").addEventListener("click", () => {
+function paintSave() {
+  const on = getSaved();
+  $$("[data-save]").forEach((b) => { b.classList.toggle("saved", on); b.setAttribute("aria-pressed", on); const t = b.querySelector("span"); if (t) t.textContent = on ? "Saved" : "Save"; });
+}
+$$("[data-save]").forEach((b) => b.addEventListener("click", () => {
   try { localStorage.setItem(saveKey, getSaved() ? "0" : "1"); } catch {}
   paintSave();
+  if (getSaved()) { b.classList.remove("popping"); void b.offsetWidth; b.classList.add("popping"); }
   toast(getSaved() ? "Saved to this device." : "Removed from saved.");
-});
+}));
 paintSave();
 
 // ---------------- photo tour + lightbox ----------------
@@ -520,6 +576,34 @@ lb.addEventListener("touchstart", (e) => (touchX = e.touches[0].clientX), { pass
 lb.addEventListener("touchend", (e) => { if (touchX === null) return; const dx = e.changedTouches[0].clientX - touchX; if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1)); touchX = null; });
 $$("dialog.sheet").forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close(); }));
 $$(".x[data-close]").forEach((b) => { if (!b.textContent.trim()) b.innerHTML = icons.x; });
+
+// ---------------- mobile photo carousel ----------------
+const track_ = $("#m-track");
+track_.addEventListener("scroll", () => {
+  $("#m-count").textContent = `${Math.round(track_.scrollLeft / track_.clientWidth) + 1} / ${photos.length}`;
+}, { passive: true });
+
+// ---------------- desktop section bar ----------------
+function renderSecbar() {
+  const est = estimate();
+  const st = p.stayTypes[state.type];
+  secbar.innerHTML = `<div class="wrap"><div class="secbar-links"><a href="#top">Photos</a><a href="#amenities">Amenities</a>${r ? "<a href=\"#reviews\">Reviews</a>" : ""}<a href="#location">Location</a></div>
+    <div class="secbar-cta"><div><b>${est ? money(site, est.total) : money(site, st.price)}</b> <span class="muted small">${est ? (firm() ? "total" : "est. total") : state.type === "monthly" ? "month" : "night"}</span>${r ? `<div class="xs">${icons.star} ${r.value} · <span class="muted">${r.count} reviews</span></div>` : ""}</div><button class="btn btn-primary" data-secbar-reserve>${est ? "Request to book" : "Check availability"}</button></div></div>`;
+}
+const seen = { gallery: true, book: true };
+const secIO = new IntersectionObserver((entries) => {
+  entries.forEach((e) => (seen[e.target.dataset.watch] = e.isIntersecting));
+  secbar.classList.toggle("on", !seen.gallery);
+  secbar.classList.toggle("cta", !seen.book);
+}, { rootMargin: "-72px 0px 0px 0px" });
+$(".gallery").dataset.watch = "gallery"; secIO.observe($(".gallery"));
+$("#book").dataset.watch = "book"; secIO.observe($("#book"));
+secbar.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-secbar-reserve]")) return;
+  if (estimate()) return openRequest();
+  $("#book").scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(openDates, 400);
+});
 
 // ---------------- map (Leaflet + OpenStreetMap, free, lazy-loaded) ----------------
 const LEAFLET = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/";

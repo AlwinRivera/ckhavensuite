@@ -56,7 +56,9 @@
     </div>
   </header>
 
-  <main class="wrap" id="main"><p class="muted" style="padding:48px 0">Loading…</p></main>
+  <main class="wrap" id="main" aria-busy="true">
+    <div class="skeleton" aria-label="Loading"><i class="sk-title"></i><i class="sk-photo"></i><div class="sk-row"><div><i></i><i></i><i class="short"></i></div><i class="sk-card"></i></div></div>
+  </main>
 
   <div class="mbar" id="mbar"></div>
 
@@ -75,6 +77,13 @@
   <dialog class="sheet" id="amen" aria-label="All amenities">
     <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><h2>What this place offers</h2><span></span></div>
     <div class="sheet-body" id="amen-body"></div>
+  </dialog>
+
+  <dialog class="sheet dates-sheet" id="dates" aria-label="Choose dates">
+    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><div class="ds-head"><h2 id="ds-title">Select dates</h2><div class="muted xs" id="ds-sub"></div></div><span></span></div>
+    <div class="ds-dow" aria-hidden="true"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+    <div class="ds-body"><div data-cal="sheet"></div></div>
+    <div class="ds-foot"><button class="u" data-clear>Clear dates</button><div class="ds-total" id="ds-total"></div><button class="btn btn-dark" id="ds-done">Close</button></div>
   </dialog>
 
   <dialog class="sheet" id="request" aria-label="Send your request">

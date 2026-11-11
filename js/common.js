@@ -62,7 +62,7 @@ export function monthHTML(year, month, dayClass) {
     const aria = `${parse(s).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}${title ? `, ${title}` : ""}`;
     cells += `<button type="button" class="day ${cls}" data-date="${s}" ${disabled ? "disabled" : ""} aria-label="${esc(aria)}"><span>${i}</span></button>`;
   }
-  return `<div class="cal"><h4>${label}</h4><div class="cal-grid">${cells}</div></div>`;
+  return `<div class="cal" data-month="${iso(first).slice(0, 7)}"><h4>${label}</h4><div class="cal-grid">${cells}</div></div>`;
 }
 
 // ---- contact channels ----
@@ -163,6 +163,8 @@ export const icons = {
   star: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="star"><path d="m12 2.5 2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8Z"/></svg>',
   check: S('<path d="M20 6 9 17l-5-5"/>'),
   x: S('<path d="M18 6 6 18M6 6l12 12"/>', 'stroke-width="2.2"'),
+  chevL: S('<path d="m15 18-6-6 6-6"/>', 'stroke-width="2.4"'),
+  chevR: S('<path d="m9 18 6-6-6-6"/>', 'stroke-width="2.4"'),
   heart: S('<path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.4 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4h2C13.8 6.1 15.2 5 17.2 5c3.5 0 5.6 3.4 4.3 6.7C19.5 16.4 12 21 12 21Z"/>'),
   share: S('<path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>'),
   grid: S('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),

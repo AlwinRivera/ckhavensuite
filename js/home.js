@@ -1,4 +1,4 @@
-import { loadData, $, $$, esc, money, plural, pic, demoBar, footer, channelList, openChannel, icons, starsHTML, todayISO, addDays, bookedNights, nextFreeNight, pretty } from "./common.js";
+import { loadData, $, $$, esc, money, plural, pic, demoBar, footer, channelList, openChannel, icons, toast, starsHTML, todayISO, addDays, bookedNights, nextFreeNight, pretty } from "./common.js";
 
 const { site, avail } = await loadData();
 demoBar(site);
@@ -31,9 +31,12 @@ function renderUnits() {
     const free = nextFreeNight(bookedNights(avail, p.id));
     const synced = Object.values(p.channels || {}).some((c) => c.ical) || site.demo;
     const when = !synced ? "Message us for dates" : free === todayISO() ? "Available tonight" : `Available from ${pretty(free)}`;
+    // Cover first, then one photo from each other room: swipeable like the Airbnb app.
+    const shots = [{ src: p.cover, alt: p.name }, ...p.tour.map((r) => r.photos[0]).filter((ph) => ph.src !== p.cover)].slice(0, 6);
     return `
+    <div class="lcard-wrap" data-unit="${esc(p.id)}">
       <a class="lcard" href="property.html?id=${encodeURIComponent(p.id)}&type=${st ? type : "nightly"}">
-        <div class="lcard-media">${pic(p.cover, p.name, { sizes: "(max-width:640px) 100vw, 360px" })}${p.rating ? `<span class="lcard-badge">Loved by guests</span>` : ""}</div>
+        <div class="lcard-media"><div class="lc-track">${shots.map((ph, i) => pic(ph.src, ph.alt, { sizes: "(max-width:640px) 100vw, 360px", lazy: i > 0, cls: i ? "" : "vt-hero" })).join("")}</div>${p.rating ? `<span class="lcard-badge">Loved by guests</span>` : ""}</div>
         <div class="lcard-body">
           <div class="lcard-top"><span>${esc(p.kind.replace("Entire ", "").replace(/^./, (m) => m.toUpperCase()))} in ${esc(p.area.split(",")[0].replace("Brgy. ", ""))}</span>${p.rating ? `<span class="rating-inline" style="font-weight:400">${icons.star} ${p.rating.value} (${p.rating.count})</span>` : ""}</div>
           <span class="muted">${esc(p.name)} · ${esc(p.building)}</span>
@@ -41,11 +44,50 @@ function renderUnits() {
           <span class="muted">${when}</span>
           <span class="price" style="margin-top:4px">${st ? `${st.confirmed ? "" : "From "}<b>${money(site, st.price)}</b> ${type === "monthly" ? "month" : "night"}` : `<span class="muted">Not offered as a ${type === "monthly" ? "monthly rental" : "short stay"}</span>`}</span>
         </div>
-      </a>`;
+      </a>
+      <div class="lc-over">
+        <button type="button" class="lc-heart${isSaved(p.id) ? " saved" : ""}" data-heart aria-pressed="${isSaved(p.id)}" aria-label="Save ${esc(p.name)}">${icons.heart}</button>
+        <button type="button" class="lc-arrow prev" data-step="-1" aria-label="Previous photo" hidden>${icons.chevL}</button>
+        <button type="button" class="lc-arrow next" data-step="1" aria-label="Next photo">${icons.chevR}</button>
+        <div class="lc-dots" aria-hidden="true">${shots.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>
+      </div>
+    </div>`;
   });
   if (site.showComingSoon) cards.push(`<div class="lcard soon"><div class="lcard-media"><div><div style="font-size:2rem;line-height:1">+</div><b style="color:var(--ink)">More havens coming</b><p class="small" style="margin:6px 0 0">New units get their own page, calendar and booking links automatically.</p></div></div></div>`);
   $("#units").innerHTML = cards.join("");
+  $$(".lcard-wrap").forEach((w) => {
+    const track = w.querySelector(".lc-track");
+    const dots = [...w.querySelectorAll(".lc-dots i")];
+    track.addEventListener("scroll", () => {
+      const i = Math.round(track.scrollLeft / track.clientWidth);
+      dots.forEach((d, j) => d.classList.toggle("on", j === i));
+      w.querySelector(".prev").hidden = i === 0;
+      w.querySelector(".next").hidden = i === dots.length - 1;
+    }, { passive: true });
+  });
 }
+// Saved state is shared with the listing page's heart (same key).
+const saveKey = (id) => `ckhaven:saved:${id}`;
+function isSaved(id) { try { return localStorage.getItem(saveKey(id)) === "1"; } catch { return false; } }
+$("#units").addEventListener("click", (e) => {
+  const w = e.target.closest(".lcard-wrap");
+  if (!w) return;
+  const step = e.target.closest("[data-step]");
+  if (step) {
+    const track = w.querySelector(".lc-track");
+    track.scrollBy({ left: track.clientWidth * Number(step.dataset.step), behavior: "smooth" });
+    return;
+  }
+  const heart = e.target.closest("[data-heart]");
+  if (heart) {
+    const on = !isSaved(w.dataset.unit);
+    try { localStorage.setItem(saveKey(w.dataset.unit), on ? "1" : "0"); } catch {}
+    heart.classList.toggle("saved", on);
+    heart.setAttribute("aria-pressed", on);
+    heart.classList.remove("popping"); void heart.offsetWidth; if (on) heart.classList.add("popping");
+    toast(on ? "Saved to this device." : "Removed from saved.");
+  }
+});
 $$(".toggle button").forEach((b) => b.addEventListener("click", () => {
   type = b.dataset.type;
   $$(".toggle button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
