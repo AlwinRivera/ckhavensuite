@@ -205,11 +205,14 @@ a.chip:hover { text-decoration: underline; }
 .rating-inline { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
 
 .host-mini { display: flex; align-items: center; gap: 14px; }
-.avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 1.15rem; flex: none; position: relative; overflow: hidden; }
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* No overflow:hidden here, or the verified badge that sits on the edge gets clipped; the photo rounds itself. */
+.avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 1.15rem; flex: none; position: relative; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .avatar.lg { width: 104px; height: 104px; font-size: 2.6rem; }
-.verified { position: absolute; right: -2px; bottom: -2px; width: 22px; height: 22px; border-radius: 50%; background: var(--rose); border: 2px solid #fff; display: grid; place-items: center; }
-.verified svg { width: 12px; height: 12px; color: #fff; }
+.verified { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--rose); border: 2px solid #fff; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18); }
+.verified svg { width: 12px; height: 12px; color: #fff; stroke-width: 3.2; }
+.avatar.lg .verified { width: 34px; height: 34px; right: 0; bottom: 0; border-width: 3px; }
+.avatar.lg .verified svg { width: 18px; height: 18px; }
 
 .highlights { display: grid; gap: 22px; }
 .hl { display: grid; grid-template-columns: 28px 1fr; gap: 18px; align-items: start; }
