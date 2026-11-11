@@ -17,7 +17,7 @@ if (site.properties.some((p) => Object.values(p.channels || {}).some((ch) => ch.
   $("#stays-lead").textContent = "Live availability, synced with our Airbnb and Booking.com calendars, so what you see is really free.";
 
 // Social proof + channels
-if (r) $("#proof").innerHTML = `${icons.star} ${r.value} · ${r.count} reviews on ${esc(r.source)}`;
+if (r) $("#proof").innerHTML = `${icons.star}<b>${r.value}</b><span>· ${r.count} reviews on ${esc(r.source)}</span>`;
 const airbnb = first.channels?.airbnb?.url;
 $("#channels").innerHTML = `
   <span>Find us on</span>
