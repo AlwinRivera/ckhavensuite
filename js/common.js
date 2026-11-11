@@ -137,7 +137,7 @@ export function footer(site) {
   el.innerHTML = `
     <div>
       <div>© ${new Date().getFullYear()} ${esc(site.brand)} · One Oasis, Cagayan de Oro</div>
-      <div class="xs" style="margin-top:4px">${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a> · ` : ""}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div>
+      <div class="small" style="margin-top:4px">${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a> · ` : ""}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div>
     </div>
     <div class="socials">
       ${c.facebook ? `<a href="${esc(c.facebook)}" target="_blank" rel="noopener" aria-label="Facebook">${icons.fb}</a>` : ""}

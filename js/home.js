@@ -46,6 +46,7 @@ function renderUnits() {
           <span class="muted">${esc(p.name)} · ${esc(p.building)}</span>
           <span class="muted">${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · pool access</span>
           <span class="muted">${when}</span>
+          ${type === "nightly" && p.stayTypes.monthly ? `<span class="muted">Monthly from ${money(site, p.stayTypes.monthly.price)}</span>` : ""}
           <span class="price" style="margin-top:4px">${st ? `${st.confirmed ? "" : "From "}<b>${money(site, st.price)}</b> ${type === "monthly" ? "month" : "night"}` : `<span class="muted">Not offered as a ${type === "monthly" ? "monthly rental" : "short stay"}</span>`}</span>
         </div>
       </a>
@@ -119,7 +120,7 @@ form.addEventListener("submit", (e) => {
 
 // Location highlights
 $("#loc-hl").innerHTML = [
-  [icons.pool, "Heated outdoor pool", "Shared, open year-round."],
+  [icons.pool, "Heated pool & free gym", "Pool and kids' pool 8 AM – 8 PM (₱200 per adult, ₱100 per child). The gym is free."],
   [icons.leaf, "Your own garden patio", "Table, chairs and an umbrella under the trees."],
   [icons.shield, "24/7 security", "Gated complex with round-the-clock guards."],
   [icons.car, "Parking available", "Secure parking for ₱300/night."],
@@ -128,7 +129,7 @@ $("#loc-hl").innerHTML = [
 // Reviews
 if (r) {
   $("#rev-title").innerHTML = `${icons.star.replace('class="star"', 'class="star" style="width:28px;height:28px;vertical-align:-3px"')} ${r.value} from ${r.count} guests`;
-  $("#rev-list").innerHTML = r.reviews.slice(0, 3).map((rv) => `
+  $("#rev-list").innerHTML = r.reviews.slice(0, 4).map((rv) => `
     <article class="review">
       <header><div class="avatar">${esc(rv.name[0])}</div><div><b>${esc(rv.name)}</b><div class="muted xs">${esc(rv.date)} · via ${esc(r.source)}</div></div></header>
       ${starsHTML(rv.stars)}
@@ -148,7 +149,7 @@ $("#perks").innerHTML = [
 
 // Host + contact
 $("#host-mini").innerHTML = `<div class="avatar">${host.photo ? `<img src="${esc(host.photo)}" alt="">` : esc(host.initial)}<span class="verified">${icons.check}</span></div><div><b>Hosted by ${esc(host.name)}</b><div class="muted small">${host.yearsHosting} years hosting · ${esc(c.responseTime)} · ${esc(host.responseRate)} response rate</div></div>`;
-const msg = `Hi ${site.brand}! I'd like to ask about a stay at ${first.name}.`;
+const msg = `Hi ${host.name.split(" ")[0]}! I'd like to ask about a stay at ${first.name}.`;
 const chans = channelList(site, msg);
 $("#contact-row").innerHTML = chans.map((ch) => `<button class="ch-btn" data-ch="${ch.key}"><i style="background:${ch.color}">${ch.icon}</i><span>${esc(ch.label)}<small>${esc(ch.sub || "")}</small></span></button>`).join("");
 $("#contact-row").addEventListener("click", (e) => {
@@ -159,7 +160,19 @@ $("#contact-row").addEventListener("click", (e) => {
 // Video mosaic: tiles open a full-screen player, like the photo viewer.
 const vp = $("#vplayer");
 const vpVideo = vp.querySelector("video");
-if (matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelectorAll(".vtile video").forEach((v) => { v.removeAttribute("autoplay"); v.pause(); });
+// The muted preview only downloads once the tour is on screen, and never with reduced motion or data saver on.
+const quiet = matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
+const preview = document.querySelector(".vtile video[data-src]");
+if (preview && !quiet && "IntersectionObserver" in window) {
+  new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      if (en.isIntersecting) {
+        if (!preview.getAttribute("src")) preview.src = preview.dataset.src;
+        preview.play().catch(() => {});
+      } else preview.pause();
+    }
+  }, { rootMargin: "200px" }).observe(preview);
+}
 document.querySelector(".vmosaic")?.addEventListener("click", (e) => {
   const t = e.target.closest("[data-play]");
   if (!t) return;

@@ -36,6 +36,7 @@
   </script>
 </head>
 <body>
+  <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap bar">
       <a class="logo" href="index.html" aria-label="CK Haven home"><img src="assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">One Oasis · Cagayan de Oro</span></span></a>
@@ -49,6 +50,7 @@
     </div>
   </header>
 
+  <main id="main">
   <section class="hero">
     <picture class="hero-img">
       <source type="image/webp" srcset="assets/img/pro/bedroom-hero-640.webp 640w, assets/img/pro/bedroom-hero-1280.webp 1280w" sizes="100vw">
@@ -109,7 +111,7 @@
       <p class="lead">Take a quick tour of the suite, kitchen, bathroom and garden.</p>
       <div class="vmosaic">
         <button type="button" class="vtile main" data-play="assets/video/pro/full-tour.mp4" data-title="Full tour" aria-label="Play the full tour, 45 seconds">
-          <video src="assets/video/pro/full-tour.mp4" poster="assets/video/pro/full-tour.jpg" muted loop playsinline autoplay preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <video data-src="assets/video/pro/full-tour.mp4" poster="assets/video/pro/full-tour.jpg" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
           <span class="vplay" aria-hidden="true"></span>
           <span class="vcap">Full tour<small>0:45 · every room and the garden</small></span>
         </button>
@@ -166,6 +168,7 @@
       <div class="channels-grid" id="contact-row" style="max-width:720px;margin-top:20px"></div>
     </div>
   </section>
+  </main>
 
   <dialog class="vplayer" id="vplayer" aria-label="Video player">
     <div class="vp">

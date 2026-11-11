@@ -22,7 +22,7 @@ const syncedWith = Object.entries(p.channels || {}).filter(([, c]) => c.ical || 
 const hostFirst = () => host.name.split(" ")[0];
 const parking = p.addons?.parking;
 const long = { month: "short", day: "numeric", year: "numeric" };
-document.title = `${p.title} | ${site.brand}`;
+document.title = p.title.includes(site.brand) ? p.title : `${p.title} | ${site.brand}`;
 const secbar = Object.assign(document.createElement("nav"), { className: "secbar" });
 secbar.setAttribute("aria-label", "Sections");
 document.body.append(secbar);
@@ -120,11 +120,6 @@ $("#main").innerHTML = `
         <div class="cal-foot"><span class="muted xs">${syncedWith ? `Synced hourly with ${syncedWith}` : `${esc(host.name.split(" ")[0])} confirms availability in chat`}</span><button class="u" data-clear>Clear dates</button></div>
       </section>
 
-      ${p.videos?.length ? `<section class="block">
-        <h2>Video walkthrough</h2>
-        <div class="videos">${p.videos.map((v) => `<figure style="margin:0"><video src="${esc(v.src)}" poster="${esc(v.poster)}" controls playsinline preload="none"></video><figcaption class="small muted" style="margin-top:6px">${esc(v.title)} · ${esc(v.length)}</figcaption></figure>`).join("")}</div>
-        ${p.rawVideos?.length ? `<p class="small muted" style="margin:12px 0 0">Prefer it unedited? Watch the original phone videos: ${p.rawVideos.map((v) => `<a class="u" href="${esc(v.src)}" target="_blank" rel="noopener">${esc(v.title)} (${esc(v.length)})</a>`).join(" · ")}</p>` : ""}
-      </section>` : ""}
     </article>
 
     <aside>
@@ -132,6 +127,12 @@ $("#main").innerHTML = `
       <div class="side-note">${icons.tag}<div><b>Book direct and save.</b> <span class="muted">No platform service fee, and you chat with the host directly.</span></div></div>
     </aside>
   </div>
+
+  ${p.videos?.length ? `<section class="block" id="videos" style="border-top:1px solid var(--line)">
+        <h2>Video walkthrough</h2>
+        <div class="videos">${p.videos.map((v) => `<figure style="margin:0"><video src="${esc(v.src)}" poster="${esc(v.poster)}" controls playsinline preload="none"></video><figcaption class="small muted" style="margin-top:6px">${esc(v.title)} · ${esc(v.length)}</figcaption></figure>`).join("")}</div>
+        ${p.rawVideos?.length ? `<p class="small muted" style="margin:12px 0 0">Prefer it unedited? Watch the original phone videos: ${p.rawVideos.map((v) => `<a class="u" href="${esc(v.src)}" target="_blank" rel="noopener">${esc(v.title)} (${esc(v.length)})</a>`).join(" · ")}</p>` : ""}
+      </section>` : ""}
 
   ${r ? `<section class="block" id="reviews" style="border-top:1px solid var(--line)">
     <div class="rating-hero">${laurels(`<b>${r.value}</b>`)}<h2>Loved by guests</h2><p class="muted">Rated ${r.value} out of 5 by ${r.count} guests on ${esc(r.source)}.</p></div>
@@ -184,15 +185,13 @@ $("#main").innerHTML = `
     <h2>Things to know</h2>
     <div class="know">
       <div><h3>House rules</h3><ul>
-        <li>${icons.clock}Check-in: ${esc(p.rules.checkIn)}</li>
-        <li>${icons.clock}Checkout: ${esc(p.rules.checkOut)}</li>
-        <li>${icons.key}${esc(p.rules.selfCheckIn)}</li>
-        <li>${icons.users}${p.rules.maxGuests} guests maximum</li>
-        ${(p.rules.list || []).map((r) => `<li>${/^no /i.test(r) ? icons.x : /quiet/i.test(r) ? icons.clock : /lock/i.test(r) ? icons.door : icons.check}<span>${esc(r)}</span></li>`).join("")}
-      </ul></div>
+        <li>${icons.clock}<span>Check-in: ${esc(p.rules.checkIn)}</span></li>
+        <li>${icons.clock}<span>Checkout: ${esc(p.rules.checkOut)}</span></li>
+        <li>${icons.users}<span>${p.rules.maxGuests} guests maximum</span></li>
+      </ul><button class="u know-more" data-rules>Show more ›</button></div>
       <div><h3>Safety & property</h3><ul>
         ${p.amenities.filter((g) => g.group === "Home safety").flatMap((g) => g.items).map((a) => `<li>${amenityIcon(a)}${esc(a)}</li>`).join("")}
-        ${p.amenities.filter((g) => g.missing).flatMap((g) => g.items).map((a) => `<li>${amenityIcon(a)}<span>No ${esc(a.toLowerCase())}</span></li>`).join("")}
+        ${p.amenities.filter((g) => g.missing).flatMap((g) => g.items).filter((a) => /alarm|detector|extinguisher|first aid/i.test(a)).map((a) => `<li>${amenityIcon(a)}<span>No ${esc(a.toLowerCase())}</span></li>`).join("")}
         <li>${icons.shield}24/7 building security</li>
       </ul></div>
       <div><h3>Cancellation policy</h3><ul>
@@ -411,9 +410,9 @@ function openDates() {
 // ---------------- request sheet ----------------
 function requestMessage() {
   const est = estimate();
-  if (!est) return `Hi ${site.brand}! I have a question about ${p.name}.`;
+  if (!est) return `Hi ${hostFirst()}! I have a question about ${p.name}.`;
   return [
-    `Hi ${site.brand}! I'd like to book ${p.name} (${state.type === "monthly" ? "monthly rental" : "short stay"}).`,
+    `Hi ${hostFirst()}! I'd like to book ${p.name} (${state.type === "monthly" ? "monthly rental" : "short stay"}).`,
     `Check-in: ${pretty(state.in, { weekday: "short", ...long })}`,
     `Checkout: ${pretty(state.out, { weekday: "short", ...long })}`,
     `${plural(est.n, "night")} · ${plural(state.guests, "guest")}${state.parking ? " · with parking" : ""}`,
@@ -516,6 +515,19 @@ $("#desc-more").addEventListener("click", (e) => {
 });
 $("#amen-body").innerHTML = p.amenities.map((g) => `<h3 style="margin-top:8px">${esc(g.group)}</h3><ul class="amen-list">${g.items.map((a) => `<li class="${g.missing ? "missing" : ""}">${amenityIcon(a)}<span>${esc(a)}</span></li>`).join("")}</ul>`).join("");
 $("#amen-open").addEventListener("click", () => $("#amen").showModal());
+
+// House rules sheet, grouped like Airbnb's: checking in and out, during your stay, before you leave.
+const ruleIcon = (r) => /^no |not the bedroom/i.test(r) ? icons.x : /quiet|until|checkout/i.test(r) ? icons.clock : /guest/i.test(r) ? icons.users : /pool/i.test(r) ? icons.pool : /lock/i.test(r) ? icons.door : icons.check;
+const ruleList = (items) => `<ul class="amen-list">${items.map((r) => `<li>${ruleIcon(r)}<span>${esc(r)}</span></li>`).join("")}</ul>`;
+const ru = p.rules;
+$("#rules-body").innerHTML = `
+  <p class="muted" style="margin-top:0">You’ll be staying in someone’s home, so please treat it with care and respect.</p>
+  <h3>Checking in and out</h3>
+  ${ruleList([`Check-in: ${ru.checkIn}`, `Checkout: ${ru.checkOut}`, ru.selfCheckIn, ru.lateCheckout].filter(Boolean))}
+  <h3>During your stay</h3>
+  ${ruleList([`${ru.maxGuests} guests maximum`, ...(ru.list || [])])}
+  ${ru.beforeCheckout?.length ? `<h3>Before you leave</h3>${ruleList(ru.beforeCheckout)}` : ""}`;
+document.querySelector("[data-rules]")?.addEventListener("click", () => $("#rules").showModal());
 
 // ---------------- share / save ----------------
 $$("[data-share]").forEach((b) => b.addEventListener("click", async () => {

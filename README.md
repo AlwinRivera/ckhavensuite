@@ -70,6 +70,11 @@ Optional: `npx wrangler kv namespace create RATE` and paste the id into `wrangle
 login rate limiting. To change a password or remove someone, re-run step 4 and update `ADMIN_USERS`; removing
 a person logs them out at once. Logins last 30 days.
 
+### Demo (no setup)
+Open `/admin/?demo`, or tap **Try the demo, no login** on the login page. The whole admin runs in the browser tab with no
+admin service and no password; saves, blocked dates and undo all work, but nothing reaches the real website and it resets
+when the tab closes. Handy for showing the owners before logins exist.
+
 ### Try it locally
 ```bash
 node scripts/admin-user.mjs --email owner@ckhaven.test --name Khandy --dev
@@ -83,9 +88,13 @@ Each photo in `assets/img/` has `-640.webp` and `-1280.webp` versions that the s
 Photos uploaded in the admin get these made automatically in the browser. If you add a photo by hand, create both versions too (any image tool works; the build used ffmpeg).
 
 ## Share previews
-Facebook and Messenger only read **absolute** `og:image` URLs. After deploying, change
-`content="assets/brand/og.jpg"` in `index.html` and `property.html` to the full URL,
-for example `https://<user>.github.io/ckhavensuite/assets/brand/og.jpg`.
+Facebook and Messenger only read **absolute** `og:image` URLs, and search engines want a canonical link and a sitemap.
+After deploying, put the site's address in `data/site.json` → `siteUrl` (for example `https://<user>.github.io/ckhavensuite/`) and run:
+```bash
+node scripts/site-url.mjs
+```
+It makes the share image and structured-data images absolute, adds `og:url` and `<link rel="canonical">`, and writes `sitemap.xml` plus the `Sitemap:` line in `robots.txt`.
+`404.html` assumes the site lives at `/ckhavensuite/`; change its three links if you move to a custom domain.
 
 ## Analytics (optional, free)
 Create a GoatCounter site and put its code in `data/site.json` → `analytics.goatcounter`.

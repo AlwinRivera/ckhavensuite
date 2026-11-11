@@ -25,7 +25,7 @@
     "@type": "LodgingBusiness",
     "name": "CK Haven",
     "description": "Entire 1-bedroom condo at One Oasis, Cagayan de Oro with private garden patio and pool access.",
-    "image": "assets/img/bedroom-wide.jpg",
+    "image": "assets/img/pro/bedroom-hero.jpg",
     "telephone": "+63 906 506 2589",
     "email": "ckoasishaven@gmail.com",
     "priceRange": "₱",
@@ -44,6 +44,7 @@
   </script>
 </head>
 <body class="has-mbar">
+  <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap bar">
       <a class="logo" href="index.html" aria-label="CK Haven home"><img src="assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">One Oasis · Cagayan de Oro</span></span></a>
@@ -72,6 +73,11 @@
       <div class="lb-top"><button data-lb="close">✕ Close</button><span id="lb-count"></span><span id="lb-room" class="small"></span></div>
       <div class="lb-stage"><figure class="lb-fig"><img alt=""><figcaption id="lb-cap"></figcaption></figure><button class="lb-arrow prev" data-lb="prev" aria-label="Previous photo">‹</button><button class="lb-arrow next" data-lb="next" aria-label="Next photo">›</button></div>
     </div>
+  </dialog>
+
+  <dialog class="sheet" id="rules" aria-label="House rules">
+    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><h2>House rules</h2><span></span></div>
+    <div class="sheet-body" id="rules-body"></div>
   </dialog>
 
   <dialog class="sheet" id="amen" aria-label="All amenities">

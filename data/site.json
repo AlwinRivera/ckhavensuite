@@ -64,7 +64,7 @@
         "CK Haven is a 1-bedroom condo made for every kind of traveler: a cozy bedroom with a queen-size bed, a spacious living room with a 50-inch voice-activated smart TV, a fully equipped kitchen and a bathroom with hot and cold shower.",
         "The bedroom has spacious lockers, hangers, room-darkening curtains and a split-type aircon. The kitchen has a fridge with freezer, microwave, induction stove with hood, electric kettle, rice cooker, dining table, cooking basics and 3-stage filtered drinking water. In the living room, the sofa converts into a queen-size bed, and the 50-inch smart TV has Chromecast, Netflix and cable.",
         "Step out the back door and down to your private garden patio for coffee under the umbrella. Wi-Fi is fast, there is an Ethernet connection and a dedicated workspace, and secure parking is available for ₱300/night. Long stays of 28 nights or more are welcome.",
-        "Inside One Oasis you can use the shared heated pool and kids’ pool (8 AM – 8 PM) and the residents’ gym, free of charge. The building has an elevator, and the shower has a grab rail.",
+        "Inside One Oasis there’s a shared heated pool and kids’ pool (8 AM – 8 PM; ₱200 per adult and ₱100 per child, paid at the pool, or ask us to get your tickets ahead) and a residents’ gym that’s free to use. The building has an elevator, and the shower has a grab rail.",
         "Guests have access to the whole unit. The top-level lockers are reserved for fresh linens for incoming guests; every other locker is yours."
       ],
       "guests": 4,
@@ -87,7 +87,7 @@
         {
           "icon": "pool",
           "title": "Pool access & private garden",
-          "text": "Shared heated pool and kids’ pool (8 AM – 8 PM), a free gym, plus your own garden patio."
+          "text": "Shared heated pool and kids’ pool (8 AM – 8 PM, ₱200 per adult · ₱100 per child), a free gym, plus your own garden patio."
         },
         {
           "icon": "key",
@@ -330,7 +330,7 @@
         {
           "group": "Building",
           "items": [
-            "Shared heated outdoor pool (8 AM – 8 PM)",
+            "Shared heated outdoor pool, 8 AM – 8 PM (₱200 per adult, ₱100 per child)",
             "Kids’ pool",
             "Free gym",
             "Kids’ play area",
@@ -358,7 +358,7 @@
         }
       ],
       "topAmenities": [
-        "Shared heated outdoor pool (8 AM – 8 PM)",
+        "Shared heated pool (₱200 per adult, ₱100 per child)",
         "Private garden patio",
         "Free gym",
         "Fast Wi-Fi",
@@ -419,8 +419,21 @@
           "No smoking or vaping",
           "Quiet hours 11 PM – 5 AM",
           "No parties or events",
-          "Lock up at checkout"
-        ]
+          "Visitors welcome until 8 PM",
+          "Extra overnight guests ₱300 each (4 guests max)",
+          "Pool: ₱200 per adult, ₱100 per child, paid at the pool",
+          "No decorations (balloons, confetti and the like)",
+          "Please eat in the kitchen and dining area, not the bedroom",
+          "No strong-smelling food (fried fish, bulad, durian)",
+          "Clean as you go: wash used dishes, trash in the bins",
+          "Keep household items in the unit (the garden is fine)"
+        ],
+        "beforeCheckout": [
+          "Switch off the lights, aircon, water heater and appliances",
+          "Put dishes and household items back where you found them",
+          "Lock up"
+        ],
+        "lateCheckout": "Need a late checkout? Message us as early as you can."
       },
       "channels": {
         "airbnb": {

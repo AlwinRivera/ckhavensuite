@@ -1,6 +1,6 @@
 // CK Haven host admin. Structured editing like a host app: Today, Calendar, Listing,
 // Website and Changes. Saves go to the admin API, which commits to GitHub.
-import { $, $$, esc, money, plural, monthHTML, todayISO, pretty, nightsBetween, addDays, icons, toast, timeAgo } from "../js/common.js";
+import { $, $$, esc, money, plural, monthHTML, todayISO, pretty, nightsBetween, addDays, icons, toast as baseToast, timeAgo } from "../js/common.js";
 
 // ---------------- setup ----------------
 const TOKEN_KEY = "ckhaven-admin-token";
@@ -15,11 +15,60 @@ const prop = () => S.site.properties.find((p) => p.id === S.prop) || S.site.prop
 const isOwner = () => S.user?.role === "owner";
 const clone = (o) => structuredClone(o);
 
+// ---------------- demo mode ----------------
+// admin/?demo (or "Try the demo" on the login screen) runs the whole admin in this browser tab:
+// no login, no admin service, and nothing reaches the real website. Changes last until the tab closes.
+const DEMO_KEY = "ckhaven-admin-demo";
+let DEMO = new URLSearchParams(location.search).has("demo") || loadSession(DEMO_KEY) != null;
+function loadSession(k) { try { return sessionStorage.getItem(k); } catch { return null; } }
+function saveSession(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch {} }
+// Toasts promise "live in a minute"; in the demo, say plainly that nothing was published.
+const toast = (m) => baseToast(DEMO ? String(m).replace(/ ?(It's live on the website in about a minute|Live on the website in about a minute|The website updates in a couple of minutes; Airbnb and Booking.com on their next calendar check)./, " Demo only: the real website isn't changed.") : m);
+const D = { user: { email: "demo@ckhaven", name: "Khandy", role: "owner" } };
+const sha = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => b.toString(16).padStart(2, "0")).join("");
+async function demoState() {
+  if (D.state) return D.state;
+  const saved = loadSession(DEMO_KEY);
+  if (saved) { try { return (D.state = JSON.parse(saved)); } catch {} }
+  const get = (f, fallback) => fetch(`../data/${f}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : fallback)).catch(() => fallback);
+  const [site, bookings, availability] = await Promise.all([get("site.json", null), get("direct-bookings.json", []), get("availability.json", { properties: {} })]);
+  const first = { sha: sha(), message: "Website as it is today", author: "CK Haven", date: new Date().toISOString(), site };
+  return (D.state = { site, siteSha: first.sha, bookings, availability, history: [first] });
+}
+const keep = () => saveSession(DEMO_KEY, JSON.stringify(D.state));
+async function demoApi(method, path, b = {}) {
+  const st = await demoState();
+  if (!st.site) throw new Error("Couldn't load the website details for the demo.");
+  const commit = (message) => { const c = { sha: sha(), message, author: D.user.name, date: new Date().toISOString(), site: clone(st.site) }; st.history.unshift(c); st.siteSha = c.sha; keep(); return c.sha; };
+  const key = `${method} ${path}`;
+  if (key === "POST /api/login" || key === "GET /api/me") return { token: "demo", user: D.user };
+  if (key === "GET /api/data") return { site: clone(st.site), siteSha: st.siteSha, bookings: clone(st.bookings), availability: clone(st.availability) };
+  if (key === "PUT /api/site") { st.site = clone(b.site); return { ok: true, siteSha: commit(b.message || "Update site details") }; }
+  if (key === "POST /api/bookings") {
+    if (st.bookings.some((x) => x.property === b.property && b.start < x.end && x.start < b.end)) throw new Error("Those dates overlap a booking you already added.");
+    st.bookings.push({ property: b.property, start: b.start, end: b.end, label: b.label || "" });
+    st.bookings.sort((a, c) => a.start.localeCompare(c.start)); keep();
+    return { ok: true, bookings: clone(st.bookings) };
+  }
+  if (key === "DELETE /api/bookings") { st.bookings = st.bookings.filter((x) => !(x.property === b.property && x.start === b.start && x.end === b.end)); keep(); return { ok: true, bookings: clone(st.bookings) }; }
+  if (key === "POST /api/photos") return { ok: true, src: `assets/img/u/demo-${Date.now().toString(36)}.jpg` };
+  if (key === "GET /api/history") return { changes: st.history.map(({ site, ...c }) => c) };
+  if (key === "POST /api/restore") {
+    const old = st.history.find((c) => c.sha === b.sha);
+    if (!old) throw new Error("That version can't be found.");
+    st.site = clone(old.site); commit(`Went back to “${b.label || "an earlier version"}”`);
+    return { ok: true };
+  }
+  throw new Error("Not available in the demo.");
+}
+function startDemo() { DEMO = true; saveSession(DEMO_KEY, ""); S.token = "demo"; boot(); }
+
 let API = new URLSearchParams(location.search).get("api");
 if (!API && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API = "http://localhost:8787";
 if (!API) API = await fetch("../data/site.json").then((r) => r.json()).then((s) => s.adminApi).catch(() => "");
 
 async function api(method, path, body) {
+  if (DEMO) return demoApi(method, path, body);
   let res;
   try {
     res = await fetch(API + path, {
@@ -49,9 +98,11 @@ function showLogin(msg = "") {
         <div class="login-err" role="alert">${esc(msg)}</div>
         <button class="btn btn-primary btn-block btn-lg" type="submit">Log in</button>
         <p class="hint" style="margin:16px 0 0">Forgot your password? Ask the site admin to set a new one.</p>
+        <div class="login-demo"><span>Just looking?</span><button type="button" class="btn btn-soft btn-block" data-demo>Try the demo, no login</button><p class="hint">Everything works, but nothing you change reaches the real website.</p></div>
       </form>
     </main>`;
-  if (!API) { $(".login-err").textContent = "The admin service isn't connected yet. See README → Host admin."; return; }
+  $("[data-demo]").addEventListener("click", startDemo);
+  if (!API) { $(".login-err").textContent = "Logins aren't switched on yet. Use the demo below to look around."; return; }
   $("#login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = e.target, btn = f.querySelector("button[type=submit]");
@@ -70,11 +121,13 @@ function showLogin(msg = "") {
 function logout() {
   if (ed.dlg.open) { ed.dirty = false; ed.dlg.close(); }
   Object.assign(S, { token: null, user: null, tab: "today", cal: {} });
-  save(TOKEN_KEY, null);
+  if (DEMO) { DEMO = false; D.state = null; saveSession(DEMO_KEY, null); if (location.search.includes("demo")) history.replaceState(null, "", location.pathname); }
+  else save(TOKEN_KEY, null); // leaving the demo keeps any real login saved on this device
   showLogin();
 }
 
 async function boot() {
+  if (DEMO) S.token = "demo";
   if (!S.token) return showLogin();
   try {
     const [me, data] = await Promise.all([api("GET", "/api/me"), api("GET", "/api/data")]);
@@ -103,7 +156,7 @@ function tabsHTML(cls) {
 }
 function shell() {
   const u = S.user;
-  app.innerHTML = `
+  app.innerHTML = `${DEMO ? `<div class="demo-bar" role="status"><b>Demo</b> Try anything: changes stay in this browser tab and never reach the real website. <button class="u" data-logout>Leave the demo</button></div>` : ""}
     <header class="ad-top"><div class="bar">
       <a class="logo" href="../index.html" target="_blank" rel="noopener" title="Open the website"><img src="../assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">Host</span></span></a>
       ${tabsHTML("")}
