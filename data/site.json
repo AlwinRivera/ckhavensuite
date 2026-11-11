@@ -1,0 +1,138 @@
+{
+  "brand": "CK Haven",
+  "tagline": "Your cozy haven at One Oasis, Cagayan de Oro",
+  "currency": "₱",
+  "demo": true,
+  "siteUrl": "",
+  "analytics": { "goatcounter": "" },
+  "contact": {
+    "phone": "+63 906 506 2589",
+    "whatsapp": "+639065062589",
+    "viber": "+639065062589",
+    "messenger": "CKHaven1133",
+    "email": "ckoasishaven@gmail.com",
+    "facebook": "https://www.facebook.com/CKHaven1133",
+    "instagram": "https://www.instagram.com/ckoasishaven/",
+    "responseTime": "Responds within an hour"
+  },
+  "host": {
+    "name": "Khandy Lorraine",
+    "initial": "K",
+    "photo": "",
+    "yearsHosting": 5,
+    "responseRate": "100%",
+    "cohosts": ["Elizabeth"],
+    "bio": "I'm a nurse and currently working as a teacher. The three things that bring me the most joy are eating, traveling and reading. Cleanliness is a must for me.",
+    "languages": ["English", "Filipino"]
+  },
+  "properties": [
+    {
+      "id": "ck-haven-suite",
+      "name": "CK Haven",
+      "title": "CK Haven · 1BR garden condo with pool access",
+      "kind": "Entire condo",
+      "status": "live",
+      "building": "One Oasis",
+      "area": "Brgy. Camaman-an, Cagayan de Oro",
+      "city": "Cagayan de Oro, Philippines",
+      "map": { "lat": 8.4682, "lon": 124.6597, "zoom": 15 },
+      "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures.",
+      "summary": "Ground-floor 1-bedroom condo at One Oasis with a private garden patio, 50\" smart TV, full kitchen and shared heated pool.",
+      "description": [
+        "CK Haven is a 1-bedroom condo made for every kind of traveler: a cozy bedroom with a queen-size bed, a spacious living room with a 50-inch voice-activated smart TV, a fully equipped kitchen and a bathroom with hot and cold shower.",
+        "The bedroom has spacious lockers and is kept cool by a split-type aircon. The kitchen has utensils, an induction stove with hood, refrigerator, microwave and 3-stage filtered drinking water. In the living room, the sofa converts into a queen-size bed.",
+        "Step out the back door and down to your private garden patio for coffee under the umbrella. Wi-Fi is fast, and secure parking is available for ₱300/night.",
+        "Guests have access to the whole unit. The top-level lockers are reserved for fresh linens for incoming guests; every other locker is yours."
+      ],
+      "guests": 4,
+      "bedrooms": 1,
+      "beds": 2,
+      "baths": 1,
+      "sleeping": [
+        { "room": "Bedroom", "beds": "1 queen bed", "photo": "assets/img/bedroom.jpg" },
+        { "room": "Living room", "beds": "1 sofa bed (queen)", "photo": "assets/img/living-room.jpg" }
+      ],
+      "highlights": [
+        { "icon": "pool", "title": "Pool access & private garden", "text": "Shared heated outdoor pool open year-round, plus your own garden patio." },
+        { "icon": "key", "title": "Self check-in", "text": "Check yourself in with the lockbox, any time from 2 to 5 PM." },
+        { "icon": "pin", "title": "In the heart of CDO", "text": "Central business district, minutes from malls and restaurants." },
+        { "icon": "spark", "title": "Spotless & welcoming", "text": "Guests highlight the clean, cozy space and a responsive host." }
+      ],
+      "stayTypes": {
+        "nightly": { "price": 2500, "minNights": 1 },
+        "monthly": { "price": 23000, "minNights": 30, "note": "Utilities billed separately" }
+      },
+      "promos": { "earlyBird": { "percent": 10, "daysAhead": 7, "label": "Early-bird: 10% off when you book 7+ days before check-in" } },
+      "addons": { "parking": { "label": "Parking", "price": 300, "per": "night" } },
+      "cover": "assets/img/bedroom-lounge.jpg",
+      "hero": "assets/img/bedroom-wide.jpg",
+      "tour": [
+        { "room": "Bedroom", "note": "Queen bed · Split-type aircon · Wardrobe & vanity", "photos": [
+          { "src": "assets/img/bedroom-lounge.jpg", "alt": "Queen bed with a glass sliding door to the living room" },
+          { "src": "assets/img/bedroom.jpg", "alt": "Queen bed with striped pillows and air conditioning" },
+          { "src": "assets/img/bedroom-wide.jpg", "alt": "Close-up of the bed with rolled towels and artwork" },
+          { "src": "assets/img/bedroom-vanity.jpg", "alt": "Built-in wardrobe with vanity mirror" }
+        ]},
+        { "room": "Living room", "note": "Sofa bed · 50\" smart TV · Bar stools", "photos": [
+          { "src": "assets/img/living-room.jpg", "alt": "Living room with sofa, rug and view into the bedroom" },
+          { "src": "assets/img/living-tv.jpg", "alt": "Pink TV console with 50-inch smart TV" },
+          { "src": "assets/img/living-sofa.jpg", "alt": "Grey sofa bed under a guitar and trumpet painting" }
+        ]},
+        { "room": "Kitchen", "note": "Induction stove · Microwave · Fridge · Filtered water", "photos": [
+          { "src": "assets/img/kitchen.jpg", "alt": "Kitchen sink with 3-stage water filter and induction cooktop" },
+          { "src": "assets/img/kitchen-counter.jpg", "alt": "Kitchen counter with marble-look island" }
+        ]},
+        { "room": "Bathroom", "note": "Hot & cold shower", "photos": [
+          { "src": "assets/img/bathroom.jpg", "alt": "Bathroom sink with octagonal mirror" },
+          { "src": "assets/img/shower.jpg", "alt": "Shower area with rain shower head" }
+        ]},
+        { "room": "Garden patio", "note": "Private · Table, chairs & umbrella", "photos": [
+          { "src": "assets/img/garden-patio.jpg", "alt": "Private garden patio with table and umbrella" },
+          { "src": "assets/img/garden-steps.jpg", "alt": "Steps down to the garden patio" }
+        ]},
+        { "room": "Little touches", "note": "CK Haven amenity kit · Guest wall", "photos": [
+          { "src": "assets/img/amenity-kit.jpg", "alt": "CK Haven amenity kit with rolled towels" },
+          { "src": "assets/img/guest-notes.jpg", "alt": "Guest thank-you notes on a Good Vibes Only board" }
+        ]}
+      ],
+      "videos": [
+        { "src": "assets/video/tour-kitchen.mp4", "poster": "assets/video/tour-kitchen.jpg", "title": "Full walkthrough", "length": "2:49" },
+        { "src": "assets/video/tour-bath.mp4", "poster": "assets/video/tour-bath.jpg", "title": "Bathroom & kitchen", "length": "1:11" }
+      ],
+      "amenities": [
+        { "group": "Bathroom", "items": ["Hot & cold shower", "Towels", "CK Haven amenity kit"] },
+        { "group": "Bedroom & laundry", "items": ["Split-type air conditioning", "Queen bed", "Lockers & wardrobe", "Fresh linens"] },
+        { "group": "Entertainment", "items": ["50\" voice-activated smart TV", "Fast Wi-Fi"] },
+        { "group": "Kitchen & dining", "items": ["Induction stove with hood", "Microwave", "Refrigerator", "Kitchen utensils", "3-stage filtered drinking water", "Bar stools"] },
+        { "group": "Outdoor", "items": ["Private garden patio", "Outdoor table, chairs & umbrella"] },
+        { "group": "Building", "items": ["Shared heated outdoor pool", "Kids' play area", "24/7 security", "Parking (₱300/night)"] },
+        { "group": "Home safety", "items": ["Smoke alarm", "Fire extinguisher"] },
+        { "group": "Not included", "missing": true, "items": ["Carbon monoxide alarm"] }
+      ],
+      "topAmenities": ["Shared heated outdoor pool", "Private garden patio", "Fast Wi-Fi", "50\" voice-activated smart TV", "Split-type air conditioning", "Induction stove with hood", "Refrigerator", "Microwave", "Hot & cold shower", "Parking (₱300/night)"],
+      "rating": {
+        "source": "Airbnb",
+        "value": 4.8,
+        "count": 44,
+        "categories": { "Cleanliness": 4.7, "Accuracy": 4.7, "Check-in": 4.7, "Communication": 4.7, "Location": 4.8, "Value": 4.8 },
+        "reviews": [
+          { "name": "Veronica Khaila", "date": "October 2026", "stars": 5, "text": "Felt right home. 🩷" },
+          { "name": "Sittie", "date": "August 2026", "stars": 5, "text": "Wonderful place! Also the hanging spot outside was great!" },
+          { "name": "Jishai", "date": "December 2025", "stars": 5, "text": "The place was very nice and spacious, perfect for a family of four. We had a very pleasant experience." },
+          { "name": "Butzik", "date": "December 2025", "stars": 4, "text": "Good location and peaceful." }
+        ]
+      },
+      "rules": {
+        "checkIn": "2:00 PM – 5:00 PM",
+        "checkOut": "Before 12:00 PM",
+        "selfCheckIn": "Self check-in with lockbox",
+        "maxGuests": 4,
+        "cancellation": "Cancellation terms are confirmed with you in chat before you pay any deposit."
+      },
+      "channels": {
+        "airbnb": { "url": "https://www.airbnb.com/rooms/50234618", "ical": "" },
+        "booking": { "url": "", "ical": "" }
+      }
+    }
+  ]
+}
