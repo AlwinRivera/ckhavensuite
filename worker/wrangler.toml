@@ -1,0 +1,22 @@
+# CK Haven admin API on Cloudflare Workers (free plan: 100,000 requests/day).
+# Setup steps are in README.md → "Host admin".
+name = "ckhaven-admin"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+GITHUB_REPO = "YOUR-GITHUB-USER/ckhavensuite"
+GITHUB_BRANCH = "main"
+# Where the admin page is served from (GitHub Pages origin, no path).
+ALLOWED_ORIGINS = "https://YOUR-GITHUB-USER.github.io"
+
+# Optional but recommended: stronger login rate limiting (free KV namespace).
+# Create with: npx wrangler kv namespace create RATE   then paste the id here.
+# [[kv_namespaces]]
+# binding = "RATE"
+# id = ""
+
+# Secrets (never put these in this file):
+#   npx wrangler secret put GITHUB_TOKEN     fine-grained token, this repo only, "Contents: read and write"
+#   npx wrangler secret put SESSION_SECRET   any long random string (64+ characters)
+#   npx wrangler secret put ADMIN_USERS      JSON list from scripts/admin-user.mjs

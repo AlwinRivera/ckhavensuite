@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const port = Number(process.argv[2] || process.env.PORT || 8080);
 const types = {
   ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript",
-  ".json": "application/json", ".jpg": "image/jpeg", ".png": "image/png", ".svg": "image/svg+xml",
+  ".json": "application/json", ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".svg": "image/svg+xml",
   ".mp4": "video/mp4", ".ics": "text/calendar",
 };
 
@@ -16,7 +16,8 @@ createServer(async (req, res) => {
   let path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([/\\])+/, "");
   if (!path || path.endsWith("/") || path.endsWith("\\")) path += "index.html";
   const file = join(root, path);
-  if (!file.startsWith(root)) return res.writeHead(403).end();
+  // never serve dot-folders (.git, .admin-dev with local test logins)
+  if (!file.startsWith(root) || /(^|[/\\])\./.test(path)) return res.writeHead(403).end();
   try {
     const body = await readFile(file);
     res.writeHead(200, { "Content-Type": types[extname(path)] || "application/octet-stream" });

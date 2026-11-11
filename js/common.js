@@ -5,6 +5,7 @@ export async function loadData() {
     fetch("data/availability.json").then((r) => r.json()).catch(() => ({ properties: {} })),
   ]);
   initAnalytics(site);
+  markJpgOnly(site);
   return { site, avail };
 }
 
@@ -14,12 +15,19 @@ export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&a
 export const money = (site, n) => `${site.currency}${Math.round(Number(n)).toLocaleString("en-PH")}`;
 export const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
+/** Photos uploaded from a browser that can't encode WebP have -640.jpg / -1280.jpg sizes instead. */
+const jpgOnly = new Set();
+export function markJpgOnly(site) {
+  for (const p of site.properties || []) for (const r of p.tour || []) for (const ph of r.photos || []) if (ph.webp === false) jpgOnly.add(ph.src);
+}
+
 /** Responsive <picture>: assets/img/x.jpg -> x-640.webp / x-1280.webp with jpg fallback. */
 export function pic(src, alt, { sizes = "100vw", lazy = true, cls = "" } = {}) {
   const base = src.replace(/\.jpe?g$/i, "");
   const hasWebp = base !== src && src.startsWith("assets/img/");
-  const img = `<img src="${esc(src)}" alt="${esc(alt)}" ${lazy ? 'loading="lazy" decoding="async"' : 'fetchpriority="high"'} ${cls ? `class="${cls}"` : ""}>`;
-  if (!hasWebp) return img;
+  const jpgSizes = jpgOnly.has(src) ? ` srcset="${esc(base)}-640.jpg 640w, ${esc(base)}-1280.jpg 1280w" sizes="${sizes}"` : "";
+  const img = `<img src="${esc(src)}"${jpgSizes} alt="${esc(alt)}" ${lazy ? 'loading="lazy" decoding="async"' : 'fetchpriority="high"'} ${cls ? `class="${cls}"` : ""}>`;
+  if (!hasWebp || jpgOnly.has(src)) return img;
   return `<picture><source type="image/webp" srcset="${esc(base)}-640.webp 640w, ${esc(base)}-1280.webp 1280w" sizes="${sizes}">${img}</picture>`;
 }
 

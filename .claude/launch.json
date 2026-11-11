@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "site", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.mjs", "8080"], "port": 8080 }
+    { "name": "site", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.mjs", "8080"], "port": 8080 },
+    { "name": "admin-api", "runtimeExecutable": "node", "runtimeArgs": ["scripts/admin-dev.mjs"], "port": 8787 }
   ]
 }

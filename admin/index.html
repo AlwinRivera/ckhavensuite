@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>Host | CK Haven</title>
+  <link rel="icon" href="../assets/brand/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Allura&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="owner admin">
+  <div id="app"><div class="ad-loading"><img src="../assets/brand/logo-mark.png" alt=""><span class="muted">Loading…</span></div></div>
+
+  <dialog class="sheet ad-editor" id="editor" aria-labelledby="ed-title">
+    <div class="sheet-head"><button class="x" data-ed-close aria-label="Close"></button><h2 id="ed-title"></h2><span></span></div>
+    <div class="sheet-body" id="ed-body"></div>
+    <div class="ed-foot"><span class="muted xs" id="ed-status"></span><button class="btn btn-soft" data-ed-close>Cancel</button><button class="btn btn-dark" id="ed-save">Save</button></div>
+  </dialog>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

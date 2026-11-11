@@ -9,6 +9,10 @@ const first = live[0] || site.properties[0];
 const r = first.rating;
 const c = site.contact;
 const host = site.host;
+// Home page text is editable in the host admin; the HTML keeps a copy for search engines.
+for (const [id, key] of [["home-headline", "headline"], ["home-intro", "intro"], ["loc-title", "locationTitle"], ["loc-text", "locationText"], ["contact-title", "contactTitle"], ["contact-text", "contactText"]]) {
+  if (site.home?.[key]) $("#" + id).textContent = site.home[key];
+}
 if (site.properties.some((p) => Object.values(p.channels || {}).some((ch) => ch.ical)))
   $("#stays-lead").textContent = "Live availability, synced with our Airbnb and Booking.com calendars, so what you see is really free.";
 
@@ -26,7 +30,7 @@ $("#channels").innerHTML = `
 // Listing cards
 let type = "nightly";
 function renderUnits() {
-  const cards = site.properties.map((p) => {
+  const cards = site.properties.filter((p) => p.status !== "hidden").map((p) => {
     const st = p.stayTypes[type];
     const free = nextFreeNight(bookedNights(avail, p.id));
     const synced = Object.values(p.channels || {}).some((c) => c.ical) || site.demo;

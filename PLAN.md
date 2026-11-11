@@ -24,7 +24,7 @@ after direct bookings cover them.
                                │
                                ▼
                  GitHub Pages static site (this repo)
-        home · property pages · availability calendar · owner view
+        home · property pages · availability calendar · host admin
                                │
                 guest picks dates → request goes to
               WhatsApp / Messenger / email (no backend)
@@ -61,14 +61,15 @@ Prices and payments stay on each platform. That's fine at this size.
 - `property.html?id=…`: gallery, amenities, live availability calendar, date
   picker, price estimate, "Request on WhatsApp / Messenger / Email",
   "Book on Airbnb / Booking.com"
-- `owner.html`: one calendar showing every channel (Airbnb, Booking, direct)
-  per unit. Not linked from the public pages.
-- `data/site.json`: **the only file the owner edits**: units, prices, photos,
-  contacts, iCal links
-- `data/direct-bookings.json`: direct bookings are added here (GitHub web editor works from a phone)
+- `admin/` + `worker/`: host admin with logins (owner and co-host). Today, Calendar (block/unblock direct
+  bookings), Listing (photos, text, prices, amenities, rules, iCal links, reviews, add a property), Website
+  (brand, home text, contacts, host profile) and Changes (history with undo). Saves are commits made by a
+  free Cloudflare Worker, so the site stays static and `₱0`.
+- `data/site.json`: everything the admin edits: units, prices, photos, contacts, iCal links, home page text
+- `data/direct-bookings.json`: direct bookings and blocked nights (written by the admin's Calendar)
 - `scripts/sync-calendars.mjs` + `.github/workflows/sync-calendars.yml`:
   hourly sync, no dependencies
-- Adding a property = adding one object to `site.json` plus a folder of photos
+- Adding a property = "+ Add a property" in the admin (starts hidden until it's ready)
 
 No sample data is left on the site. Until the iCal links are added, the calendar shows every date as open and
 the site says availability is confirmed in chat. Setting `"demo": true` brings back labelled sample bookings for showing the calendar off.

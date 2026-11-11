@@ -5,6 +5,15 @@
   "demo": false,
   "siteUrl": "",
   "analytics": { "goatcounter": "" },
+  "adminApi": "",
+  "home": {
+    "headline": "Your cozy haven in the heart of CDO.",
+    "intro": "Ground-floor 1-bedroom at One Oasis with a private garden, heated pool access and everything you need, for a night or a month.",
+    "locationTitle": "A garden hideaway in the middle of the city",
+    "locationText": "You're on the ground floor, steps from your own leafy patio, inside a resort-style complex with 24/7 security. Malls, restaurants, hospitals and BPO offices are minutes away.",
+    "contactTitle": "Questions? Message us.",
+    "contactText": "Ask about long stays, early check-in, parking or group bookings."
+  },
   "contact": {
     "phone": "+63 906 506 2589",
     "whatsapp": "+639065062589",
