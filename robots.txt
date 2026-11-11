@@ -1,3 +1,4 @@
 User-agent: *
 Disallow: /admin/
 Disallow: /owner.html
+Sitemap: https://alwinrivera.github.io/ckhavensuite/sitemap.xml
