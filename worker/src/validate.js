@@ -55,7 +55,9 @@ export function validateSite(site) {
     }
     for (const k of ["guests", "bedrooms", "beds", "baths"]) num(p[k], `${p.name} ${k}`, 0, 50);
     if (p.map) { num(p.map.lat, `${p.name} latitude`, -90, 90); num(p.map.lon, `${p.name} longitude`, -180, 180); }
-    if (!Array.isArray(p.tour) || !p.tour.some((r) => r.photos?.length)) throw bad(`${p.name}: add at least one photo.`);
+    if (!Array.isArray(p.tour)) throw bad(`${p.name}: the photo rooms are missing.`);
+    // A hidden draft can start with no photos; a live listing needs at least one.
+    if (p.status !== "hidden" && !p.tour.some((r) => r.photos?.length)) throw bad(`${p.name}: add at least one photo before it goes live.`);
   });
   return site;
 }

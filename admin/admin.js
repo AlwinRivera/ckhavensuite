@@ -545,7 +545,7 @@ $("#ed-body").addEventListener("click", (e) => {
     if (act === "left" || act === "right") { const k = j + (act === "left" ? -1 : 1); [list[j], list[k]] = [list[k], list[j]]; }
     if (act === "cover") { const [ph] = list.splice(j, 1); p.tour[0].photos.unshift(ph); }
     if (act === "del") {
-      if (allPhotos(p).length === 1) return toast("Keep at least one photo.");
+      if (allPhotos(p).length === 1 && p.status !== "hidden") return toast("A live listing needs at least one photo.");
       if (!confirm("Delete this photo from the listing?")) return;
       list.splice(j, 1);
     }
@@ -672,7 +672,9 @@ const LISTING = [
         F("text", "What they wrote", "textarea", { rows: 3 })] }),
     ] }),
   ] },
-  { id: "visibility", title: "Visibility", preview: (p) => (p.status === "hidden" ? "Hidden from the website" : "Live on the website"), fields: [
+  { id: "visibility", title: "Visibility", preview: (p) => (p.status === "hidden" ? "Hidden from the website" : "Live on the website"),
+    check: (p) => (p.status !== "hidden" && !allPhotos(p).length ? "Add at least one photo before setting it to Live." : p.status !== "hidden" && !Object.values(p.stayTypes).some((s) => s.price > 0) ? "Set a price before setting it to Live." : ""),
+    fields: [
     F("status", "Show on the website", "select", { options: [["live", "Live: guests can find it"], ["hidden", "Hidden: only people with the link"]] }),
     { type: "info", html: (p) => `<span>Web address</span><div class="copy"><code>${esc(siteBase())}property.html?id=${esc(p.id)}</code><button type="button" class="mini" data-copy="${esc(siteBase())}property.html?id=${esc(p.id)}">Copy</button></div>` },
     { type: "info", html: () => (S.site.properties.length > 1 ? `<span>Remove this property</span><button type="button" class="btn btn-soft btn-sm" data-delete-prop style="justify-self:start;color:#b3363a">Delete property…</button><small>You can bring it back from Changes.</small>` : "") },
@@ -687,7 +689,7 @@ function renderListing() {
     ${propChips()}
     <div class="prop-head">
       <div><h2 style="margin:0">${esc(p.name)}</h2><span class="pill ${p.status === "hidden" ? "hidden" : "live"}">${p.status === "hidden" ? "Hidden" : "Live"}</span></div>
-      <div class="row" style="gap:8px"><a class="btn btn-soft btn-sm" href="../property.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View listing ↗</a><button class="btn btn-soft btn-sm" data-add-prop>+ Add a property</button></div>
+      <div class="row" style="gap:8px">${allPhotos(p).length ? `<a class="btn btn-soft btn-sm" href="../property.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View listing ↗</a>` : `<span class="muted small">Add a photo to preview it</span>`}<button class="btn btn-soft btn-sm" data-add-prop>+ Add a property</button></div>
     </div>
     <div class="sec-grid">${LISTING.map((s) => `<button type="button" class="sec-card" data-sec="${s.id}"><b>${esc(s.title)}</b><span class="prev">${esc(s.preview(p) || "")}</span>${icons.chevR}${s.thumbs ? `<span class="thumbs">${allPhotos(p).slice(0, 5).map((ph) => `<img src="${esc(thumb(ph))}" alt="" loading="lazy">`).join("")}</span>` : ""}</button>`).join("")}</div>`;
 }
@@ -714,16 +716,29 @@ async function addProperty() {
   if (!name?.trim()) return;
   let id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "unit";
   while (S.site.properties.some((p) => p.id === id)) id += "-2";
-  // Start from the current place so every section is filled in, then clear what can't be shared.
-  const p = clone(prop());
-  Object.assign(p, { id, name: name.trim(), title: name.trim(), status: "hidden", channels: { airbnb: { url: "", ical: "" }, booking: { url: "", ical: "" } }, videos: [] });
-  delete p.rating;
+  // A new place starts as an empty hidden draft. Only things likely shared with the current place
+  // carry over (its building, location and house rules); photos, text, prices and reviews start blank.
+  const from = prop();
+  const p = {
+    id, name: name.trim(), title: name.trim(), status: "hidden",
+    kind: from.kind, city: from.city, building: from.building, area: from.area, address: from.address,
+    map: clone(from.map), neighborhood: from.neighborhood || "",
+    summary: "", description: [], size: "",
+    guests: 2, bedrooms: 1, beds: 1, baths: 1,
+    stayTypes: Object.fromEntries(Object.entries(from.stayTypes).map(([t, s]) => [t, { price: 0, minNights: s.minNights, confirmed: false }])),
+    addons: {}, cover: "", hero: "",
+    tour: ["Bedroom", "Living room", "Kitchen", "Bathroom"].map((room) => ({ room, note: "", photos: [] })),
+    hiddenPhotos: [], videos: [], rawVideos: [], sleeping: [], highlights: [],
+    amenities: (from.amenities || []).filter((g) => g.group === "Building").map(clone), topAmenities: [],
+    rules: clone(from.rules), faq: [],
+    channels: { airbnb: { url: "", ical: "" }, booking: { url: "", ical: "" } },
+  };
   const next = clone(S.site);
   next.properties.push(p);
   try {
     const r = await api("PUT", "/api/site", { site: next, sha: S.siteSha, message: `Add property ${p.name} (hidden)` });
     S.site = next; S.siteSha = r.siteSha; S.prop = id;
-    toast(`${p.name} added as hidden. Update its photos, details and prices, then set it to Live.`);
+    toast(`${p.name} added as a hidden draft. Location, building amenities and house rules came from ${from.name}; add photos, details and prices, then set it to Live.`);
     render();
   } catch (err) { toast(err.message); }
 }

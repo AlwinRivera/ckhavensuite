@@ -79,7 +79,8 @@ body.admin { background: var(--sand); min-height: 100vh; }
 .copy code { flex: 1; }
 
 /* editor sheet */
-dialog.ad-editor { width: min(720px, 100vw - 24px); height: min(90vh, 900px); }
+/* Desktop: a centred card. Phones: the shared sheet style (full width, rising from the bottom). */
+@media (min-width: 641px) { dialog.ad-editor { width: min(720px, 100vw - 24px); height: min(90vh, 900px); } }
 .ed-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fff; }
 .ed-foot .muted { margin-right: auto; }
 @media (max-width: 640px) { dialog.ad-editor { height: 94vh; } }
