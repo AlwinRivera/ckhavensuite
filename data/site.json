@@ -58,12 +58,13 @@
         "zoom": 16,
         "google": "https://www.google.com/maps/place/One+Oasis+Cagayan+de+oro/@8.4781131,124.6597766,17z/data=!4m6!3m5!1s0x32fff2c63fb3ad77:0x93c07e418b9604b0!8m2!3d8.4781131!4d124.6597766"
       },
-      "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures.",
-      "summary": "Ground-floor 1-bedroom condo at One Oasis with a private garden patio, 50\" smart TV, full kitchen and shared heated pool.",
+      "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures. Laguindingan International Airport is about 34 km away.",
+      "summary": "Ground-floor 28 m² 1-bedroom condo at One Oasis with a private garden patio, 50\" smart TV, full kitchen, free gym and shared heated pool.",
       "description": [
         "CK Haven is a 1-bedroom condo made for every kind of traveler: a cozy bedroom with a queen-size bed, a spacious living room with a 50-inch voice-activated smart TV, a fully equipped kitchen and a bathroom with hot and cold shower.",
-        "The bedroom has spacious lockers and is kept cool by a split-type aircon. The kitchen has utensils, an induction stove with hood, refrigerator, microwave and 3-stage filtered drinking water. In the living room, the sofa converts into a queen-size bed.",
-        "Step out the back door and down to your private garden patio for coffee under the umbrella. Wi-Fi is fast, and secure parking is available for ₱300/night.",
+        "The bedroom has spacious lockers, hangers, room-darkening curtains and a split-type aircon. The kitchen has a fridge with freezer, microwave, induction stove with hood, electric kettle, rice cooker, dining table, cooking basics and 3-stage filtered drinking water. In the living room, the sofa converts into a queen-size bed, and the 50-inch smart TV has Chromecast, Netflix and cable.",
+        "Step out the back door and down to your private garden patio for coffee under the umbrella. Wi-Fi is fast, there is an Ethernet connection and a dedicated workspace, and secure parking is available for ₱300/night. Long stays of 28 nights or more are welcome.",
+        "Inside One Oasis you can use the shared heated pool and kids’ pool (8 AM – 8 PM) and the residents’ gym, free of charge. The building has an elevator, and the shower has a grab rail.",
         "Guests have access to the whole unit. The top-level lockers are reserved for fresh linens for incoming guests; every other locker is yours."
       ],
       "guests": 4,
@@ -86,7 +87,7 @@
         {
           "icon": "pool",
           "title": "Pool access & private garden",
-          "text": "Shared heated outdoor pool open year-round, plus your own garden patio."
+          "text": "Shared heated pool and kids’ pool (8 AM – 8 PM), a free gym, plus your own garden patio."
         },
         {
           "icon": "key",
@@ -180,10 +181,6 @@
             {
               "src": "assets/img/pro/kitchen-wide.jpg",
               "alt": "Kitchen with 3-stage water filter, sink and induction cooktop"
-            },
-            {
-              "src": "assets/img/kitchen-counter.jpg",
-              "alt": "Kitchen counter with marble-look island"
             }
           ]
         },
@@ -212,6 +209,28 @@
             {
               "src": "assets/img/pro/garden-detail.jpg",
               "alt": "Patio table and chairs under the umbrella among the plants"
+            }
+          ]
+        },
+        {
+          "room": "Resort amenities",
+          "note": "Shared pool · Free gym · 24/7 guarded gate",
+          "photos": [
+            {
+              "src": "assets/img/listing/pool.jpg",
+              "alt": "One Oasis swimming pool and clubhouse at dusk"
+            },
+            {
+              "src": "assets/img/listing/gym.jpg",
+              "alt": "Free residents gym with weights and strength machines"
+            },
+            {
+              "src": "assets/img/listing/gym-cardio.jpg",
+              "alt": "Gym cardio area with exercise bike, elliptical and treadmill"
+            },
+            {
+              "src": "assets/img/listing/entrance.jpg",
+              "alt": "Gated One Oasis entrance with guardhouse"
             }
           ]
         },
@@ -250,7 +269,10 @@
           "items": [
             "Hot & cold shower",
             "Towels",
-            "CK Haven amenity kit"
+            "CK Haven amenity kit",
+            "Shampoo & body soap",
+            "Cleaning products",
+            "Grab rail in shower"
           ]
         },
         {
@@ -259,14 +281,24 @@
             "Split-type air conditioning",
             "Queen bed",
             "Lockers & wardrobe",
-            "Fresh linens"
+            "Fresh linens",
+            "Hangers",
+            "Extra pillows & blankets",
+            "Room-darkening curtains"
           ]
         },
         {
           "group": "Entertainment",
           "items": [
-            "50\" voice-activated smart TV",
-            "Fast Wi-Fi"
+            "50\" smart TV with Chromecast, Netflix & cable"
+          ]
+        },
+        {
+          "group": "Internet & office",
+          "items": [
+            "Fast Wi-Fi",
+            "Ethernet connection",
+            "Dedicated workspace"
           ]
         },
         {
@@ -277,23 +309,35 @@
             "Refrigerator",
             "Kitchen utensils",
             "3-stage filtered drinking water",
-            "Bar stools"
+            "Bar stools",
+            "Freezer",
+            "Electric kettle",
+            "Rice cooker",
+            "Dining table",
+            "Cooking basics (oil, salt, pepper)",
+            "Dishes & cutlery"
           ]
         },
         {
           "group": "Outdoor",
           "items": [
             "Private garden patio",
-            "Outdoor table, chairs & umbrella"
+            "Outdoor table, chairs & umbrella",
+            "Outdoor dining area",
+            "Sun loungers"
           ]
         },
         {
           "group": "Building",
           "items": [
-            "Shared heated outdoor pool",
-            "Kids' play area",
+            "Shared heated outdoor pool (8 AM – 8 PM)",
+            "Kids’ pool",
+            "Free gym",
+            "Kids’ play area",
+            "Elevator",
             "24/7 security",
-            "Parking (₱300/night)"
+            "Parking (₱300/night)",
+            "Long stays (28+ nights) welcome"
           ]
         },
         {
@@ -307,21 +351,23 @@
           "group": "Not included",
           "missing": true,
           "items": [
-            "Carbon monoxide alarm"
+            "Carbon monoxide alarm",
+            "Washer",
+            "Dryer"
           ]
         }
       ],
       "topAmenities": [
-        "Shared heated outdoor pool",
+        "Shared heated outdoor pool (8 AM – 8 PM)",
         "Private garden patio",
+        "Free gym",
         "Fast Wi-Fi",
-        "50\" voice-activated smart TV",
+        "Dedicated workspace",
+        "50\" smart TV with Chromecast, Netflix & cable",
         "Split-type air conditioning",
         "Induction stove with hood",
         "Refrigerator",
-        "Microwave",
-        "Hot & cold shower",
-        "Parking (₱300/night)"
+        "Hot & cold shower"
       ],
       "rating": {
         "source": "Airbnb",
@@ -367,7 +413,14 @@
         "checkOut": "Before 12:00 PM",
         "selfCheckIn": "Self check-in with lockbox",
         "maxGuests": 4,
-        "cancellation": "Cancellation terms are confirmed with you in chat before you pay any deposit."
+        "cancellation": "Cancellation terms are confirmed with you in chat before you pay any deposit.",
+        "list": [
+          "No pets",
+          "No smoking or vaping",
+          "Quiet hours 11 PM – 5 AM",
+          "No parties or events",
+          "Lock up at checkout"
+        ]
       },
       "channels": {
         "airbnb": {
@@ -390,7 +443,35 @@
           "title": "bathroom & kitchen",
           "length": "1:11"
         }
-      ]
+      ],
+      "hiddenPhotos": [
+        {
+          "src": "assets/img/kitchen-counter.jpg",
+          "alt": "Kitchen counter with marble-look island",
+          "room": "Kitchen"
+        },
+        {
+          "src": "assets/img/listing/kitchen-island.jpg",
+          "alt": "Breakfast bar with marble-look top, bar stools and pendant lights",
+          "room": "Kitchen"
+        },
+        {
+          "src": "assets/img/listing/kitchen-fridge.jpg",
+          "alt": "Full-size LG refrigerator, microwave and kitchenette",
+          "room": "Kitchen"
+        },
+        {
+          "src": "assets/img/listing/hot-shower.jpg",
+          "alt": "Rain shower with electric water heater for hot showers",
+          "room": "Bathroom"
+        },
+        {
+          "src": "assets/img/listing/playground.jpg",
+          "alt": "Kids playground on the One Oasis grounds",
+          "room": "Resort amenities"
+        }
+      ],
+      "size": "28 m²"
     }
   ]
 }

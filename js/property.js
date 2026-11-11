@@ -82,7 +82,7 @@ $("#main").innerHTML = `
     <article>
       <section class="block overview">
         <h2>${esc(p.kind)} in ${esc(p.city)}</h2>
-        <div class="muted">${plural(p.guests, "guest")} · ${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · ${plural(p.baths, "bath")}</div>
+        <div class="muted">${plural(p.guests, "guest")} · ${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · ${plural(p.baths, "bath")}${p.size ? ` · ${esc(p.size)}` : ""}</div>
         </section>
       ${r ? `<a class="rating-card" href="#reviews">${laurels(`<b>${r.value}</b>`)}<div class="rc-text"><b>Loved by guests</b><span>Rated ${r.value} out of 5 by ${r.count} guests on ${esc(r.source)}</span></div><div class="rc-num"><b>${r.count}</b><span>Reviews</span></div></a>` : ""}
 
@@ -188,6 +188,7 @@ $("#main").innerHTML = `
         <li>${icons.clock}Checkout: ${esc(p.rules.checkOut)}</li>
         <li>${icons.key}${esc(p.rules.selfCheckIn)}</li>
         <li>${icons.users}${p.rules.maxGuests} guests maximum</li>
+        ${(p.rules.list || []).map((r) => `<li>${/^no /i.test(r) ? icons.x : /quiet/i.test(r) ? icons.clock : /lock/i.test(r) ? icons.door : icons.check}<span>${esc(r)}</span></li>`).join("")}
       </ul></div>
       <div><h3>Safety & property</h3><ul>
         ${p.amenities.filter((g) => g.group === "Home safety").flatMap((g) => g.items).map((a) => `<li>${amenityIcon(a)}${esc(a)}</li>`).join("")}
