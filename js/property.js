@@ -17,8 +17,8 @@ const airbnbUrl = p.channels?.airbnb?.url;
 // Promos and rates only become promises once the owner sets "confirmed": true in site.json.
 const earlyBird = p.promos?.earlyBird?.confirmed ? p.promos.earlyBird : null;
 const firm = () => !!p.stayTypes[state.type].confirmed;
-// Only name a platform as synced once its iCal link is set (or in demo mode, where dates are samples).
-const syncedWith = Object.entries(p.channels || {}).filter(([, c]) => c.ical || (site.demo && c.url)).map(([k]) => ({ airbnb: "Airbnb", booking: "Booking.com" })[k] || k).join(" & ") || "our bookings";
+// Only claim a synced calendar for platforms whose iCal link is set (or in demo mode, where dates are samples).
+const syncedWith = Object.entries(p.channels || {}).filter(([, c]) => c.ical || (site.demo && c.url)).map(([k]) => ({ airbnb: "Airbnb", booking: "Booking.com" })[k] || k).join(" & ");
 const hostFirst = () => host.name.split(" ")[0];
 const parking = p.addons?.parking;
 const long = { month: "short", day: "numeric", year: "numeric" };
@@ -103,7 +103,7 @@ $("#main").innerHTML = `
         <h2 id="cal-title"></h2>
         <div class="muted small" id="cal-sub" style="margin-bottom:24px"></div>
         <div class="cal-wrap" data-cal="inline"></div>
-        <div class="cal-foot"><span class="muted xs">Synced hourly with ${syncedWith}</span><button class="u" data-clear>Clear dates</button></div>
+        <div class="cal-foot"><span class="muted xs">${syncedWith ? `Synced hourly with ${syncedWith}` : `${esc(host.name.split(" ")[0])} confirms availability in chat`}</span><button class="u" data-clear>Clear dates</button></div>
       </section>
 
       ${p.videos?.length ? `<section class="block">
@@ -348,7 +348,7 @@ function renderBook() {
       <div class="total"><span>${firm() ? "Total" : "Estimated total"}</span><span>${money(site, est.total)}</span></div></div>` : ""}
     ${airbnbUrl ? `<div class="alt-book muted">Prefer Airbnb? <a class="u" href="${esc(airbnbUrl)}" target="_blank" rel="noopener" data-ota="airbnb">Book there ↗</a></div>` : ""}
     ${p.channels?.booking?.url ? `<div class="alt-book muted" style="margin-top:4px">Or on <a class="u" href="${esc(p.channels.booking.url)}" target="_blank" rel="noopener" data-ota="booking">Booking.com ↗</a></div>` : ""}
-    <div class="sync"><span class="dot"></span>Live calendar · synced hourly with ${syncedWith}</div>`;
+    ${syncedWith ? `<div class="sync"><span class="dot"></span>Live calendar · synced hourly with ${syncedWith}</div>` : ""}`;
 }
 
 $("#book").addEventListener("click", (e) => {

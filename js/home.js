@@ -9,6 +9,8 @@ const first = live[0] || site.properties[0];
 const r = first.rating;
 const c = site.contact;
 const host = site.host;
+if (site.properties.some((p) => Object.values(p.channels || {}).some((ch) => ch.ical)))
+  $("#stays-lead").textContent = "Live availability, synced with our Airbnb and Booking.com calendars, so what you see is really free.";
 
 // Social proof + channels
 if (r) $("#proof").innerHTML = `${icons.star} ${r.value} · ${r.count} reviews on ${esc(r.source)}`;
@@ -27,7 +29,8 @@ function renderUnits() {
   const cards = site.properties.map((p) => {
     const st = p.stayTypes[type];
     const free = nextFreeNight(bookedNights(avail, p.id));
-    const when = free === todayISO() ? "Available tonight" : `Available from ${pretty(free)}`;
+    const synced = Object.values(p.channels || {}).some((c) => c.ical) || site.demo;
+    const when = !synced ? "Message us for dates" : free === todayISO() ? "Available tonight" : `Available from ${pretty(free)}`;
     return `
       <a class="lcard" href="property.html?id=${encodeURIComponent(p.id)}&type=${st ? type : "nightly"}">
         <div class="lcard-media">${pic(p.cover, p.name, { sizes: "(max-width:640px) 100vw, 360px" })}${p.rating ? `<span class="lcard-badge">Loved by guests</span>` : ""}</div>
@@ -40,7 +43,7 @@ function renderUnits() {
         </div>
       </a>`;
   });
-  cards.push(`<div class="lcard soon"><div class="lcard-media"><div><div style="font-size:2rem;line-height:1">+</div><b style="color:var(--ink)">More havens coming</b><p class="small" style="margin:6px 0 0">New units get their own page, calendar and booking links automatically.</p></div></div></div>`);
+  if (site.showComingSoon) cards.push(`<div class="lcard soon"><div class="lcard-media"><div><div style="font-size:2rem;line-height:1">+</div><b style="color:var(--ink)">More havens coming</b><p class="small" style="margin:6px 0 0">New units get their own page, calendar and booking links automatically.</p></div></div></div>`);
   $("#units").innerHTML = cards.join("");
 }
 $$(".toggle button").forEach((b) => b.addEventListener("click", () => {

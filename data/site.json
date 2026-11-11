@@ -2,7 +2,7 @@
   "brand": "CK Haven",
   "tagline": "Your cozy haven at One Oasis, Cagayan de Oro",
   "currency": "₱",
-  "demo": true,
+  "demo": false,
   "siteUrl": "",
   "analytics": { "goatcounter": "" },
   "contact": {

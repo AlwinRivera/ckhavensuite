@@ -70,14 +70,14 @@ Prices and payments stay on each platform. That's fine at this size.
   hourly sync, no dependencies
 - Adding a property = adding one object to `site.json` plus a folder of photos
 
-Demo data is labelled as demo: prices, phone/IG links and booked dates are placeholders
-until the owner sends the real ones.
+No sample data is left on the site. Until the iCal links are added, the calendar shows every date as open and
+the site says availability is confirmed in chat. Setting `"demo": true` brings back labelled sample bookings for showing the calendar off.
 
 ---
 
 ## 3. Phases
 
-**Phase 0: Demo (today).** Static site on GitHub Pages with sample availability.
+**Phase 0: Demo (today).** Static site on GitHub Pages with real listing data; availability confirmed in chat until the iCal links are added.
 
 **Phase 1: Go live (₱0).** Needs the client's input (see questions below).
 1. Real prices, address/map pin, house rules, check-in/out times
@@ -118,7 +118,8 @@ Still placeholder or unconfirmed:
 - **Nightly ₱1,615** is the Booking.com rate, not his direct rate. Monthly **₱23,000** is read from a low-res FB reel.
   Both are shown as "From … · estimated", and booking requests ask him for the total instead of quoting one.
   Set `"confirmed": true` on a rate (and on `promos.earlyBird`) in `site.json` once he confirms it.
-- Booked dates (sample data until the Airbnb and Booking.com iCal export links are added)
+- Booked dates: none shown until the Airbnb and Booking.com iCal export links are added
+- Max guests: Airbnb says 4, Booking.com says 2. Bed: site says queen, Booking.com says full
 - Whether the number is on WhatsApp and Viber, or just calls and texts
 - Kids' play area (from FB photo captions); fire extinguisher (seen in a photo)
 - Living room, kitchen-counter and bathroom photos are stills taken from the walkthrough videos

@@ -1,49 +1,13 @@
 {
-  "updated": "2026-11-11T02:52:12.858Z",
-  "demo": true,
+  "updated": "2026-11-11T03:36:33.754Z",
+  "demo": false,
   "properties": {
     "ck-haven-suite": {
       "channels": {
-        "airbnb": "demo",
-        "booking": "demo"
+        "airbnb": "not-configured",
+        "booking": "not-configured"
       },
-      "booked": [
-        {
-          "start": "2026-11-12",
-          "end": "2026-11-15",
-          "source": "airbnb"
-        },
-        {
-          "start": "2026-11-18",
-          "end": "2026-11-21",
-          "source": "booking"
-        },
-        {
-          "start": "2026-11-27",
-          "end": "2026-11-30",
-          "source": "direct"
-        },
-        {
-          "start": "2026-12-09",
-          "end": "2026-12-12",
-          "source": "booking"
-        },
-        {
-          "start": "2026-12-19",
-          "end": "2026-12-23",
-          "source": "airbnb"
-        },
-        {
-          "start": "2026-12-23",
-          "end": "2026-12-27",
-          "source": "direct"
-        },
-        {
-          "start": "2026-12-31",
-          "end": "2027-01-03",
-          "source": "booking"
-        }
-      ]
+      "booked": []
     }
   }
 }
