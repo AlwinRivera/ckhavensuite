@@ -34,8 +34,14 @@
       "status": "live",
       "building": "One Oasis",
       "area": "Brgy. Camaman-an, Cagayan de Oro",
+      "address": "Rosario Limketkai Ave, Brgy. Camaman-an, Cagayan de Oro 9000",
       "city": "Cagayan de Oro, Philippines",
-      "map": { "lat": 8.4682, "lon": 124.6597, "zoom": 15 },
+      "map": {
+        "lat": 8.4781131,
+        "lon": 124.6597766,
+        "zoom": 16,
+        "google": "https://www.google.com/maps/place/One+Oasis+Cagayan+de+oro/@8.4781131,124.6597766,17z/data=!4m6!3m5!1s0x32fff2c63fb3ad77:0x93c07e418b9604b0!8m2!3d8.4781131!4d124.6597766"
+      },
       "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures.",
       "summary": "Ground-floor 1-bedroom condo at One Oasis with a private garden patio, 50\" smart TV, full kitchen and shared heated pool.",
       "description": [

@@ -127,12 +127,13 @@ $("#main").innerHTML = `
 
   <section class="block" id="location">
     <h2>Where you'll be</h2>
-    <div>${esc(p.building)}, ${esc(p.area)}</div>
-    <div class="map">
-      <iframe title="Map of ${esc(p.area)}" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${p.map.lon - 0.018},${p.map.lat - 0.011},${p.map.lon + 0.018},${p.map.lat + 0.011}&layer=mapnik"></iframe>
-      <div class="map-circle"><span>${icons.home}</span></div>
+    <div>${esc(p.building)}, ${esc(p.address || p.area)}</div>
+    <div class="map" id="map" role="region" aria-label="Map showing ${esc(p.building)}"><div class="map-fallback muted small">Loading map…</div></div>
+    <div class="row" style="margin-bottom:12px">
+      <a class="btn btn-soft btn-sm" href="${esc(p.map.google)}" target="_blank" rel="noopener">${icons.pin} Open in Google Maps</a>
+      <a class="btn btn-soft btn-sm" href="https://www.google.com/maps/dir/?api=1&destination=${p.map.lat},${p.map.lon}" target="_blank" rel="noopener" data-track="directions">${icons.car} Directions</a>
     </div>
-    <p class="muted small">Exact address and lockbox code are shared after your booking is confirmed.</p>
+    <p class="muted small">The pin marks the ${esc(p.building)} complex. Your unit number and lockbox code are shared after your booking is confirmed.</p>
     <p>${esc(p.neighborhood)}</p>
   </section>
 
@@ -511,3 +512,57 @@ lb.addEventListener("touchstart", (e) => (touchX = e.touches[0].clientX), { pass
 lb.addEventListener("touchend", (e) => { if (touchX === null) return; const dx = e.changedTouches[0].clientX - touchX; if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1)); touchX = null; });
 $$("dialog.sheet").forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close(); }));
 $$(".x[data-close]").forEach((b) => { if (!b.textContent.trim()) b.innerHTML = icons.x; });
+
+// ---------------- map (Leaflet + OpenStreetMap, free, lazy-loaded) ----------------
+const LEAFLET = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/";
+function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  const css = Object.assign(document.createElement("link"), { rel: "stylesheet", href: `${LEAFLET}leaflet.min.css` });
+  document.head.append(css);
+  return new Promise((ok, fail) => {
+    const s = Object.assign(document.createElement("script"), { src: `${LEAFLET}leaflet.min.js`, onload: () => ok(window.L), onerror: fail });
+    document.head.append(s);
+  });
+}
+async function initMap() {
+  const el = $("#map");
+  try {
+    const L = await loadLeaflet();
+    el.innerHTML = "";
+    const map = L.map(el, {
+      center: [p.map.lat, p.map.lon],
+      zoom: p.map.zoom || 16,
+      scrollWheelZoom: false, // mouse wheel scrolls the page, not the map; +/- buttons zoom
+      dragging: true,
+      tap: false,
+    });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+    const pin = L.divIcon({ className: "map-pin", html: `<span>${icons.home}</span>`, iconSize: [48, 48], iconAnchor: [24, 24] });
+    L.marker([p.map.lat, p.map.lon], { icon: pin, title: p.building, keyboard: false })
+      .addTo(map)
+      .bindPopup(`<b>${esc(p.building)}</b><br>${esc(p.address || p.area)}<br><a href="${esc(p.map.google)}" target="_blank" rel="noopener">Open in Google Maps ↗</a>`);
+    // Re-centre button so a lost guest can always get back to the pin.
+    const Recenter = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const b = L.DomUtil.create("button", "map-recenter");
+        b.type = "button"; b.title = "Back to CK Haven"; b.setAttribute("aria-label", "Back to CK Haven");
+        b.innerHTML = icons.home;
+        L.DomEvent.on(b, "click", (e) => { L.DomEvent.stop(e); map.setView([p.map.lat, p.map.lon], p.map.zoom || 16, { animate: false }); });
+        return b;
+      },
+    });
+    map.addControl(new Recenter());
+  } catch {
+    el.innerHTML = `<a class="map-fallback" href="${esc(p.map.google)}" target="_blank" rel="noopener">${icons.pin} View ${esc(p.building)} on Google Maps</a>`;
+  }
+}
+let mapStarted = false;
+const startMap = () => { if (mapStarted) return; mapStarted = true; mapIO.disconnect(); initMap(); };
+const mapIO = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) startMap(); }, { rootMargin: "400px" });
+mapIO.observe($("#map"));
+setTimeout(startMap, 4000); // backup: load anyway once the page has settled
+document.addEventListener("click", (e) => { const t = e.target.closest("[data-track]"); if (t) track(t.dataset.track); });
