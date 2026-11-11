@@ -181,6 +181,12 @@ $("#main").innerHTML = `
     </div>
   </section>
 
+  ${p.faq?.length ? `<section class="block" id="faq">
+    <h2>Questions guests ask</h2>
+    <div class="faq">${p.faq.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
+    <p class="muted small" style="margin:16px 0 0">Something else? <button class="u" data-message-host>Message ${esc(host.name.split(" ")[0])}</button></p>
+  </section>` : ""}
+
   <section class="block">
     <h2>Things to know</h2>
     <div class="know">
@@ -439,7 +445,7 @@ function openRequest(general = false) {
   $("#request").showModal();
   track(est ? "request-open" : "message-host");
 }
-$("[data-message-host]").addEventListener("click", () => openRequest(true));
+$$("[data-message-host]").forEach((b) => b.addEventListener("click", () => openRequest(true)));
 
 // ---------------- mobile bar ----------------
 function renderMbar() {

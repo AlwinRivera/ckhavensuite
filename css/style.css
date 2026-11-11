@@ -637,3 +637,12 @@ button.u { min-height: 44px; }
 .alt-book a, .raw-link a, #videos p a, .site-footer .small a { display: inline-block; padding: 12px 0; margin: -12px 0; }
 .know-more { margin-top: 8px; }
 #rules-body h3 { margin: 20px 0 4px; }
+
+/* FAQ: one question per row, tap to open */
+.faq { border-top: 1px solid var(--line); max-width: 760px; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 56px; padding: 12px 0; font-weight: 600; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ""; width: 9px; height: 9px; flex: none; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-3px); transition: transform 0.2s; }
+.faq details[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+.faq details p { margin: 0 0 18px; color: var(--muted); max-width: 640px; }

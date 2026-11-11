@@ -435,6 +435,16 @@
         ],
         "lateCheckout": "Need a late checkout? Message us as early as you can."
       },
+      "faq": [
+        { "q": "Is the pool free to use?", "a": "The pool and kids’ pool are open 8 AM – 8 PM and cost ₱200 per adult and ₱100 per child, paid at the pool. Tell us ahead and we can get your tickets ready. The gym is free." },
+        { "q": "How do I pay?", "a": "Nothing is charged on this website. Send a request, and we confirm availability and the final price in chat, then send GCash or bank details for the deposit." },
+        { "q": "How do I check in?", "a": "Check-in is 2:00 – 5:00 PM with a self check-in lockbox. Your unit number and lockbox code are sent once your booking is confirmed." },
+        { "q": "Can I check in early or check out late?", "a": "Message us as early as you can and we’ll let you know if the unit is free." },
+        { "q": "Is there parking?", "a": "Yes, secure parking is ₱300 a night. Let us know ahead so we can arrange it." },
+        { "q": "Can friends visit, or stay over?", "a": "Visitors are welcome until 8 PM. Extra overnight guests are ₱300 each, up to 4 guests in total." },
+        { "q": "Do you do monthly stays?", "a": "Yes. Monthly rentals start at ₱23,000 for 30 nights or more, with utilities billed separately." },
+        { "q": "Can I work from the unit?", "a": "Yes. There’s fast Wi-Fi, an Ethernet connection and a dedicated workspace." }
+      ],
       "channels": {
         "airbnb": {
           "url": "https://www.airbnb.com/rooms/50234618",
