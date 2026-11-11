@@ -419,7 +419,7 @@ function openEditor(section, scope) {
   $("#ed-status").textContent = "";
   drawEditor();
   ed.dlg.showModal();
-  $("#ed-body").scrollTop = 0;
+  ed.dlg.scrollTop = 0; $("#ed-body").scrollTop = 0;
 }
 function drawEditor() {
   const top = $("#ed-body").scrollTop;

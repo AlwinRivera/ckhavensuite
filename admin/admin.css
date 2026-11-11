@@ -103,8 +103,9 @@ body.admin { background: var(--sand); min-height: 100vh; }
 .ph-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .ph-acts .btn:disabled { opacity: 0.4; cursor: default; }
 .ph-del { border: 0; background: none; font: inherit; font-weight: 600; color: #b3363a; text-decoration: underline; padding: 10px 0; min-height: 44px; cursor: pointer; }
-.upload { display: inline-flex; }
-.upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+/* relative: keep the hidden input inside its button, or focusing it scrolls the whole sheet out of view */
+.upload { display: inline-flex; position: relative; }
+.upload input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; }
 .upload:focus-within .btn { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 /* admin calendar */
