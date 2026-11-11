@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-11T03:36:33.754Z",
+  "updated": "2026-11-11T05:08:40.996Z",
   "demo": false,
   "properties": {
     "ck-haven-suite": {
@@ -7,7 +7,13 @@
         "airbnb": "not-configured",
         "booking": "not-configured"
       },
-      "booked": []
+      "booked": [
+        {
+          "start": "2026-11-11",
+          "end": "2026-11-12",
+          "source": "direct"
+        }
+      ]
     }
   }
 }
