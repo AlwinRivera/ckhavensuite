@@ -123,6 +123,7 @@ $("#main").innerHTML = `
       ${p.videos?.length ? `<section class="block">
         <h2>Video walkthrough</h2>
         <div class="videos">${p.videos.map((v) => `<figure style="margin:0"><video src="${esc(v.src)}" poster="${esc(v.poster)}" controls playsinline preload="none"></video><figcaption class="small muted" style="margin-top:6px">${esc(v.title)} · ${esc(v.length)}</figcaption></figure>`).join("")}</div>
+        ${p.rawVideos?.length ? `<p class="small muted" style="margin:12px 0 0">Prefer it unedited? Watch the original phone videos: ${p.rawVideos.map((v) => `<a class="u" href="${esc(v.src)}" target="_blank" rel="noopener">${esc(v.title)} (${esc(v.length)})</a>`).join(" · ")}</p>` : ""}
       </section>` : ""}
     </article>
 

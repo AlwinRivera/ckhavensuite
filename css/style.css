@@ -146,7 +146,7 @@ a.chip:hover { text-decoration: underline; }
 .tour .eyebrow { color: #f5b6c2; }
 .tour-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 16px; align-items: start; margin-top: 24px; }
 .tour-grid figure { margin: 0; }
-.tour-grid video { width: 100%; border-radius: var(--r); background: #000; }
+.tour-grid video { width: 100%; border-radius: var(--r); background: #000; aspect-ratio: 16 / 9; object-fit: cover; }
 .tour-grid figcaption { font-size: 0.85rem; color: rgba(255, 255, 255, 0.65); margin-top: 8px; }
 .tour-grid .wide video { aspect-ratio: 16 / 9; object-fit: cover; }
 .tour-grid .tall video { aspect-ratio: 9 / 16; object-fit: cover; }
@@ -253,8 +253,8 @@ a.chip:hover { text-decoration: underline; }
 .amen-list li { padding: 14px 0; border-bottom: 1px solid var(--line); }
 .amen-list .missing { text-decoration: line-through; color: var(--muted); }
 
-.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-.videos video { border-radius: var(--r); aspect-ratio: 9 / 16; object-fit: cover; background: #000; width: 100%; }
+.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.videos video { border-radius: var(--r); aspect-ratio: 16 / 9; object-fit: cover; background: #000; width: 100%; }
 
 /* reviews */
 .rating-big { display: flex; align-items: center; gap: 10px; font: 600 1.4rem var(--sans); margin-bottom: 20px; }

@@ -74,12 +74,12 @@
         {
           "room": "Bedroom",
           "beds": "1 queen bed",
-          "photo": "assets/img/enhanced/bedroom-enhanced.jpg"
+          "photo": "assets/img/pro/bedroom-hero.jpg"
         },
         {
           "room": "Living room",
           "beds": "1 sofa bed (queen)",
-          "photo": "assets/img/enhanced/living-room-enhanced.jpg"
+          "photo": "assets/img/pro/sofa.jpg"
         }
       ],
       "highlights": [
@@ -134,28 +134,24 @@
           "per": "night"
         }
       },
-      "cover": "assets/img/enhanced/bedroom-lounge-enhanced.jpg",
-      "hero": "assets/img/bedroom-wide.jpg",
+      "cover": "assets/img/pro/living-hero.jpg",
+      "hero": "assets/img/pro/bedroom-hero.jpg",
       "tour": [
         {
           "room": "Bedroom",
           "note": "Queen bed · Split-type aircon · Wardrobe & vanity",
           "photos": [
             {
-              "src": "assets/img/enhanced/bedroom-lounge-enhanced.jpg",
-              "alt": "Queen bed with a glass sliding door to the living room"
+              "src": "assets/img/pro/bedroom-hero.jpg",
+              "alt": "Queen bed with striped pillows and a glass sliding door to the living room"
             },
             {
-              "src": "assets/img/enhanced/bedroom-enhanced.jpg",
-              "alt": "Queen bed with striped pillows and air conditioning"
+              "src": "assets/img/pro/bedroom-wardrobe.jpg",
+              "alt": "Built-in wardrobe with vanity mirror beside the bed"
             },
             {
-              "src": "assets/img/bedroom-wide.jpg",
+              "src": "assets/img/pro/bed-detail.jpg",
               "alt": "Close-up of the bed with rolled towels and artwork"
-            },
-            {
-              "src": "assets/img/bedroom-vanity.jpg",
-              "alt": "Built-in wardrobe with vanity mirror"
             }
           ]
         },
@@ -164,15 +160,15 @@
           "note": "Sofa bed · 50\" smart TV · Bar stools",
           "photos": [
             {
-              "src": "assets/img/enhanced/living-room-enhanced.jpg",
-              "alt": "Living room with sofa, rug and view into the bedroom"
+              "src": "assets/img/pro/living-hero.jpg",
+              "alt": "Living room with sofa bed, rug and view into the bedroom"
             },
             {
-              "src": "assets/img/living-tv.jpg",
+              "src": "assets/img/pro/living-tv.jpg",
               "alt": "Pink TV console with 50-inch smart TV"
             },
             {
-              "src": "assets/img/living-sofa.jpg",
+              "src": "assets/img/pro/sofa.jpg",
               "alt": "Grey sofa bed under a guitar and trumpet painting"
             }
           ]
@@ -182,8 +178,8 @@
           "note": "Induction stove · Microwave · Fridge · Filtered water",
           "photos": [
             {
-              "src": "assets/img/kitchen.jpg",
-              "alt": "Kitchen sink with 3-stage water filter and induction cooktop"
+              "src": "assets/img/pro/kitchen-wide.jpg",
+              "alt": "Kitchen with 3-stage water filter, sink and induction cooktop"
             },
             {
               "src": "assets/img/kitchen-counter.jpg",
@@ -196,11 +192,11 @@
           "note": "Hot & cold shower",
           "photos": [
             {
-              "src": "assets/img/bathroom.jpg",
-              "alt": "Bathroom sink with octagonal mirror"
+              "src": "assets/img/pro/bathroom.jpg",
+              "alt": "Bathroom sink with octagonal mirror and shower"
             },
             {
-              "src": "assets/img/shower.jpg",
+              "src": "assets/img/pro/shower.jpg",
               "alt": "Shower area with rain shower head"
             }
           ]
@@ -210,12 +206,12 @@
           "note": "Private · Table, chairs & umbrella",
           "photos": [
             {
-              "src": "assets/img/enhanced/garden-patio-enhanced.jpg",
-              "alt": "Private garden patio with table and umbrella"
+              "src": "assets/img/pro/garden-hero.jpg",
+              "alt": "Steps down to the private garden patio with umbrella"
             },
             {
-              "src": "assets/img/enhanced/garden-steps-enhanced.jpg",
-              "alt": "Steps down to the garden patio"
+              "src": "assets/img/pro/garden-detail.jpg",
+              "alt": "Patio table and chairs under the umbrella among the plants"
             }
           ]
         },
@@ -224,11 +220,11 @@
           "note": "CK Haven amenity kit · Guest wall",
           "photos": [
             {
-              "src": "assets/img/amenity-kit.jpg",
+              "src": "assets/img/pro/amenity.jpg",
               "alt": "CK Haven amenity kit with rolled towels"
             },
             {
-              "src": "assets/img/guest-notes.jpg",
+              "src": "assets/img/pro/guest-notes.jpg",
               "alt": "Guest thank-you notes on a Good Vibes Only board"
             }
           ]
@@ -236,16 +232,16 @@
       ],
       "videos": [
         {
-          "src": "assets/video/tour-kitchen.mp4",
-          "poster": "assets/video/tour-kitchen.jpg",
-          "title": "Full walkthrough",
-          "length": "2:49"
+          "src": "assets/video/pro/full-tour.mp4",
+          "poster": "assets/video/pro/full-tour.jpg",
+          "title": "Full tour",
+          "length": "0:45"
         },
         {
-          "src": "assets/video/tour-bath.mp4",
-          "poster": "assets/video/tour-bath.jpg",
-          "title": "Bathroom & kitchen",
-          "length": "1:11"
+          "src": "assets/video/pro/kitchen-bath.mp4",
+          "poster": "assets/video/pro/kitchen-bath.jpg",
+          "title": "Kitchen & bathroom",
+          "length": "0:09"
         }
       ],
       "amenities": [
@@ -382,7 +378,19 @@
           "url": "https://www.booking.com/hotel/ph/ck-haven-hot-shower-wifi-smart-tv-outdoor-garden.html",
           "ical": ""
         }
-      }
+      },
+      "rawVideos": [
+        {
+          "src": "assets/video/tour-kitchen.mp4",
+          "title": "full walkthrough",
+          "length": "2:49"
+        },
+        {
+          "src": "assets/video/tour-bath.mp4",
+          "title": "bathroom & kitchen",
+          "length": "1:11"
+        }
+      ]
     }
   ]
 }
