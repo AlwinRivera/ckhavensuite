@@ -552,6 +552,8 @@ function show(i) {
   img.src = photos[idx].src; img.alt = photos[idx].alt;
   $("#lb-count").textContent = `${idx + 1} / ${photos.length}`;
   $("#lb-room").textContent = photos[idx].room;
+  $("#lb-cap").textContent = photos[idx].alt;
+  new Image().src = photos[(idx + 1) % photos.length].src; // warm the next photo
 }
 document.addEventListener("click", (e) => {
   if (e.target.closest("[data-tour]")) { $("#tour").showModal(); track("photo-tour"); return; }

@@ -155,3 +155,18 @@ $("#contact-row").addEventListener("click", (e) => {
   const b = e.target.closest("[data-ch]");
   if (b) openChannel(chans.find((x) => x.key === b.dataset.ch), msg);
 });
+
+// Video mosaic: tiles open a full-screen player, like the photo viewer.
+const vp = $("#vplayer");
+const vpVideo = vp.querySelector("video");
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelectorAll(".vtile video").forEach((v) => { v.removeAttribute("autoplay"); v.pause(); });
+document.querySelector(".vmosaic")?.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-play]");
+  if (!t) return;
+  $("#vp-title").textContent = t.dataset.title;
+  vpVideo.src = t.dataset.play;
+  vp.showModal();
+  vpVideo.play().catch(() => {});
+});
+vp.addEventListener("click", (e) => { if (e.target.closest("[data-vp-close]") || e.target === vp) vp.close(); });
+vp.addEventListener("close", () => { vpVideo.pause(); vpVideo.removeAttribute("src"); vpVideo.load(); });

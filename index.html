@@ -107,12 +107,24 @@
       <div class="eyebrow">Video tour</div>
       <h2 class="display-2">Walk through before you arrive</h2>
       <p class="lead">Take a quick tour of the suite, kitchen, bathroom and garden.</p>
-      <div class="tour-grid">
-        <figure class="wide"><video src="assets/video/pro/living.mp4" poster="assets/video/pro/living.jpg" muted loop playsinline autoplay preload="metadata"></video><figcaption>Welcome home</figcaption></figure>
-        <figure><video src="assets/video/pro/full-tour.mp4" poster="assets/video/pro/full-tour.jpg" controls playsinline preload="none"></video><figcaption>Full tour · 0:45</figcaption></figure>
-        <figure><video src="assets/video/pro/kitchen-bath.mp4" poster="assets/video/pro/kitchen-bath.jpg" controls playsinline preload="none"></video><figcaption>Kitchen &amp; bathroom · 0:09</figcaption></figure>
+      <div class="vmosaic">
+        <button type="button" class="vtile main" data-play="assets/video/pro/full-tour.mp4" data-title="Full tour" aria-label="Play the full tour, 45 seconds">
+          <video src="assets/video/pro/full-tour.mp4" poster="assets/video/pro/full-tour.jpg" muted loop playsinline autoplay preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <span class="vplay" aria-hidden="true"></span>
+          <span class="vcap">Full tour<small>0:45 · every room and the garden</small></span>
+        </button>
+        <button type="button" class="vtile" data-play="assets/video/pro/kitchen-bath.mp4" data-title="Kitchen &amp; bathroom" aria-label="Play the kitchen and bathroom video, 9 seconds">
+          <img src="assets/video/pro/kitchen-bath.jpg" alt="" loading="lazy">
+          <span class="vplay" aria-hidden="true"></span>
+          <span class="vcap">Kitchen &amp; bathroom<small>0:09</small></span>
+        </button>
+        <button type="button" class="vtile" data-play="assets/video/pro/garden.mp4" data-title="Garden patio" aria-label="Play the garden patio video, 4 seconds">
+          <img src="assets/video/pro/garden.jpg" alt="" loading="lazy">
+          <span class="vplay" aria-hidden="true"></span>
+          <span class="vcap">Garden patio<small>0:04</small></span>
+        </button>
       </div>
-      <p class="small" style="color:rgba(255,255,255,.65);margin:14px 0 0">Prefer it unedited? Watch the original phone videos: <a href="assets/video/tour-kitchen.mp4" target="_blank" rel="noopener" style="color:inherit">full walkthrough (2:49)</a> · <a href="assets/video/tour-bath.mp4" target="_blank" rel="noopener" style="color:inherit">bathroom &amp; kitchen (1:11)</a></p>
+      <p class="raw-link">Prefer it unedited? Watch the original phone videos: <a href="assets/video/tour-kitchen.mp4" target="_blank" rel="noopener">full walkthrough (2:49)</a> · <a href="assets/video/tour-bath.mp4" target="_blank" rel="noopener">bathroom &amp; kitchen (1:11)</a></p>
     </div>
   </section>
 
@@ -154,6 +166,13 @@
       <div class="channels-grid" id="contact-row" style="max-width:720px;margin-top:20px"></div>
     </div>
   </section>
+
+  <dialog class="vplayer" id="vplayer" aria-label="Video player">
+    <div class="vp">
+      <div class="vp-top"><button type="button" data-vp-close>✕ Close</button><span id="vp-title"></span><span></span></div>
+      <div class="vp-stage"><video controls playsinline></video></div>
+    </div>
+  </dialog>
 
   <footer class="site-footer"><div class="wrap"></div></footer>
   <script type="module" src="js/home.js"></script>
