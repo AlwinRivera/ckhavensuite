@@ -413,7 +413,7 @@ function findField(fields, path, base = "") {
 // ---------------- editor sheet ----------------
 const ed = { dlg: $("#editor"), draft: null, dirty: false, section: null, scope: null };
 function openEditor(section, scope) {
-  ed.section = section; ed.scope = scope; ed.dirty = false;
+  ed.section = section; ed.scope = scope; ed.dirty = false; phOpen = null;
   ed.draft = clone(scope === "site" ? S.site : prop());
   $("#ed-title").textContent = section.title;
   $("#ed-status").textContent = "";
@@ -475,7 +475,8 @@ function closeEditor() {
   ed.dlg.close();
 }
 $$("[data-ed-close]").forEach((b) => b.addEventListener("click", closeEditor));
-ed.dlg.addEventListener("cancel", (e) => { e.preventDefault(); closeEditor(); });
+// Only Esc on the sheet itself: a cancelled file picker also fires a bubbling "cancel" from its <input>.
+ed.dlg.addEventListener("cancel", (e) => { if (e.target !== ed.dlg) return; e.preventDefault(); closeEditor(); });
 $("[data-ed-close].x").innerHTML = icons.x;
 
 $("#ed-save").addEventListener("click", async () => {
@@ -500,34 +501,29 @@ $("#ed-save").addEventListener("click", async () => {
 
 // ---------------- photos editor (custom) ----------------
 const localPreview = new Map(); // just-uploaded photos aren't on the website for about a minute
-function thumb(ph) {
+let phOpen = null, phGridTop = 0; // the photo open in its own view ({ i: room, j: photo }), and where the grid was scrolled
+function thumb(ph, w = 640) {
   if (localPreview.has(ph.src)) return localPreview.get(ph.src);
   const m = ph.src.match(/^(assets\/img\/.+)\.jpe?g$/i);
-  return m ? `../${m[1]}-640.${ph.webp === false ? "jpg" : "webp"}` : `../${ph.src}`;
+  return m ? `../${m[1]}-${w}.${ph.webp === false ? "jpg" : "webp"}` : `../${ph.src}`;
 }
 const allPhotos = (p) => p.tour.flatMap((r) => r.photos);
 function photosHTML(p) {
+  if (phOpen && p.tour[phOpen.i]?.photos[phOpen.j]) return photoHTML(p, phOpen.i, phOpen.j);
+  phOpen = null;
   const rooms = p.tour;
-  return `<p class="muted small" style="margin-top:0">The first photo is the cover on the home page and listing. Describe each photo in a few words; it helps guests using screen readers and Google.</p>
+  return `<p class="muted small" style="margin-top:0">The first photo is the cover on the home page and listing. Tap a photo to add a caption, move it or make it the cover.</p>
     ${rooms.map((r, i) => `
     <section class="room">
       <div class="fld-row">
         <label class="fld"><span>Room</span><input data-path="tour.${i}.room" data-type="text" value="${esc(r.room)}"></label>
         <label class="fld"><span>Short note</span><input data-path="tour.${i}.note" data-type="text" value="${esc(r.note || "")}" placeholder="Queen bed · Aircon"></label>
       </div>
-      <div class="ph-grid">${r.photos.map((ph, j) => {
-        const isCover = i === 0 && j === 0;
-        return `<div class="ph">
-          <div class="ph-img"><img src="${esc(thumb(ph))}" alt="" loading="lazy">${isCover ? `<span class="cover">Cover</span>` : ""}</div>
-          <textarea data-path="tour.${i}.photos.${j}.alt" data-type="text" aria-label="Photo description" placeholder="Describe this photo">${esc(ph.alt || "")}</textarea>
-          <div class="ph-tools">
-            <button type="button" class="mini" data-ph="left" data-r="${i}" data-j="${j}" ${j === 0 ? "disabled" : ""} aria-label="Move left">←</button>
-            <button type="button" class="mini" data-ph="right" data-r="${i}" data-j="${j}" ${j === r.photos.length - 1 ? "disabled" : ""} aria-label="Move right">→</button>
-            ${isCover ? "" : `<button type="button" class="mini" data-ph="cover" data-r="${i}" data-j="${j}">Make cover</button>`}
-            <button type="button" class="mini danger" data-ph="del" data-r="${i}" data-j="${j}" aria-label="Delete photo">Delete</button>
-            ${rooms.length > 1 ? `<select data-ph-room data-r="${i}" data-j="${j}" aria-label="Move to room"><option value="">Move to…</option>${rooms.map((x, k) => (k === i ? "" : `<option value="${k}">${esc(x.room)}</option>`)).join("")}</select>` : ""}
-          </div></div>`;
-      }).join("")}</div>
+      <div class="ph-grid">${r.photos.map((ph, j) => `
+        <button type="button" class="ph" data-ph-open data-r="${i}" data-j="${j}" aria-label="Edit photo ${j + 1} in ${esc(r.room)}">
+          <span class="ph-img"><img src="${esc(thumb(ph))}" alt="" loading="lazy">${i === 0 && j === 0 ? `<span class="cover">Cover</span>` : ""}<span class="ph-more" aria-hidden="true">•••</span></span>
+          <span class="ph-cap${ph.alt ? "" : " empty"}">${esc(ph.alt || "Add a caption")}</span>
+        </button>`).join("")}</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
         <label class="upload"><input type="file" accept="image/*" multiple data-upload="${i}"><span class="btn btn-soft btn-sm">${icons.grid} Add photos</span></label>
         ${r.photos.length ? "" : `<button type="button" class="mini danger" data-room-del="${i}">Remove empty room</button>`}
@@ -535,19 +531,46 @@ function photosHTML(p) {
     </section>`).join("")}
     <button type="button" class="add-btn" style="margin-top:20px" data-room-add>+ Add a room</button>`;
 }
+/** One photo on its own: big preview, caption, room, order, cover, delete. */
+function photoHTML(p, i, j) {
+  const r = p.tour[i], ph = r.photos[j], isCover = i === 0 && j === 0;
+  const a = (act, label, extra = "") => `<button type="button" class="btn btn-soft btn-sm" data-ph="${act}" data-r="${i}" data-j="${j}" ${extra}>${label}</button>`;
+  return `<button type="button" class="ph-back" data-ph-back>← All photos</button>
+    <div class="ph-big"><img src="${esc(thumb(ph, 1280))}" alt="">${isCover ? `<span class="cover">Cover</span>` : ""}</div>
+    <p class="muted small">Photo ${j + 1} of ${r.photos.length} in ${esc(r.room)}</p>
+    <label class="fld"><span>Caption</span><textarea rows="2" data-path="tour.${i}.photos.${j}.alt" data-type="text" placeholder="Queen bed with striped pillows">${esc(ph.alt || "")}</textarea>
+      <small class="muted">A few words on what's in the photo. Screen readers read it out, and it helps Google.</small></label>
+    ${p.tour.length > 1 ? `<label class="fld"><span>Room</span><select data-ph-room data-r="${i}" data-j="${j}">${p.tour.map((x, k) => `<option value="${k}"${k === i ? " selected" : ""}>${esc(x.room)}</option>`).join("")}</select></label>` : ""}
+    <div class="ph-acts">
+      ${a("left", "Move earlier", j === 0 ? "disabled" : "")}
+      ${a("right", "Move later", j === r.photos.length - 1 ? "disabled" : "")}
+      ${isCover ? "" : a("cover", "Make cover photo")}
+    </div>
+    <button type="button" class="ph-del" data-ph="del" data-r="${i}" data-j="${j}">Delete photo</button>`;
+}
+function showPhoto(next) {
+  if (!phOpen && next) phGridTop = $("#ed-body").scrollTop;
+  const back = phOpen && !next;
+  phOpen = next; drawEditor();
+  $("#ed-body").scrollTop = back ? phGridTop : 0;
+}
 $("#ed-body").addEventListener("click", (e) => {
   if (!ed.section?.custom) return;
   const p = ed.draft;
+  const o = e.target.closest("[data-ph-open]");
+  if (o) return showPhoto({ i: Number(o.dataset.r), j: Number(o.dataset.j) });
+  if (e.target.closest("[data-ph-back]")) return showPhoto(null);
   const b = e.target.closest("[data-ph]");
   if (b) {
     const i = Number(b.dataset.r), j = Number(b.dataset.j), list = p.tour[i].photos;
     const act = b.dataset.ph;
-    if (act === "left" || act === "right") { const k = j + (act === "left" ? -1 : 1); [list[j], list[k]] = [list[k], list[j]]; }
-    if (act === "cover") { const [ph] = list.splice(j, 1); p.tour[0].photos.unshift(ph); }
+    if (act === "left" || act === "right") { const k = j + (act === "left" ? -1 : 1); [list[j], list[k]] = [list[k], list[j]]; phOpen = { i, j: k }; }
+    if (act === "cover") { const [ph] = list.splice(j, 1); p.tour[0].photos.unshift(ph); phOpen = { i: 0, j: 0 }; }
     if (act === "del") {
       if (allPhotos(p).length === 1 && p.status !== "hidden") return toast("A live listing needs at least one photo.");
       if (!confirm("Delete this photo from the listing?")) return;
       list.splice(j, 1);
+      syncCover(p); markDirty(); return showPhoto(null);
     }
     syncCover(p); markDirty(); drawEditor(); return;
   }
@@ -559,9 +582,12 @@ $("#ed-body").addEventListener("change", async (e) => {
   if (!ed.section?.custom) return;
   const p = ed.draft;
   const mv = e.target.closest("[data-ph-room]");
-  if (mv && mv.value !== "") {
-    const [ph] = p.tour[Number(mv.dataset.r)].photos.splice(Number(mv.dataset.j), 1);
-    p.tour[Number(mv.value)].photos.push(ph);
+  if (mv) {
+    const from = Number(mv.dataset.r), to = Number(mv.value);
+    if (from === to) return;
+    const [ph] = p.tour[from].photos.splice(Number(mv.dataset.j), 1);
+    p.tour[to].photos.push(ph);
+    phOpen = { i: to, j: p.tour[to].photos.length - 1 };
     syncCover(p); markDirty(); drawEditor(); return;
   }
   const up = e.target.closest("[data-upload]");

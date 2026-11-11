@@ -89,15 +89,20 @@ body.admin { background: var(--sand); min-height: 100vh; }
 .room { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 18px; }
 .room:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
 .ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px; }
-.ph { background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; }
-.ph-img { position: relative; aspect-ratio: 4 / 3; background: var(--sand); overflow: hidden; }
-.ph-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.ph-img .cover { z-index: 1; }
-.ph-img .cover { position: absolute; top: 6px; left: 6px; background: #fff; border-radius: 999px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; }
-.ph textarea { border: 0; border-top: 1px solid var(--line); padding: 8px 10px; font: inherit; font-size: 0.8rem; resize: none; height: 54px; }
-.ph textarea:focus { outline: 2px solid var(--ink); outline-offset: -2px; }
-.ph-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px 8px; }
-.ph-tools select { font-size: 0.75rem; padding: 4px; border: 1px solid var(--line-strong); border-radius: 8px; max-width: 100%; flex: 1; min-width: 0; }
+.ph { background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.ph:hover { border-color: var(--ink); }
+.ph:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ph-img { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--sand); overflow: hidden; }
+.ph-img img, .ph-big img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cover { position: absolute; z-index: 1; top: 8px; left: 8px; background: #fff; border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.ph-more { position: absolute; z-index: 1; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.92); display: grid; place-items: center; font-size: 0.6rem; letter-spacing: 1px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.ph-cap { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 10px 12px 12px; font-size: 0.85rem; line-height: 1.4; min-height: 2.8em; }
+.ph-cap.empty { color: #6a6a6a; text-decoration: underline; }
+.ph-back { border: 0; background: none; font: inherit; font-weight: 600; padding: 10px 0; min-height: 44px; cursor: pointer; text-decoration: underline; margin-bottom: 8px; color: inherit; }
+.ph-big { position: relative; aspect-ratio: 4 / 3; border-radius: var(--r); overflow: hidden; background: var(--sand); }
+.ph-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ph-acts .btn:disabled { opacity: 0.4; cursor: default; }
+.ph-del { border: 0; background: none; font: inherit; font-weight: 600; color: #b3363a; text-decoration: underline; padding: 10px 0; min-height: 44px; cursor: pointer; }
 .upload { display: inline-flex; }
 .upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .upload:focus-within .btn { outline: 2px solid var(--ink); outline-offset: 2px; }
