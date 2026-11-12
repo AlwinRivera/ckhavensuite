@@ -14,12 +14,12 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#f6f3ed">
   <link rel="icon" href="assets/brand/favicon.png">
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Allura&family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Geist:wght@400..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script type="application/ld+json">
   {
@@ -45,59 +45,33 @@
   }
   </script>
 </head>
-<body class="has-mbar">
+<body data-page="units">
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap bar">
-      <a class="logo" href="index.html" aria-label="CK Haven home"><img src="assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">One Oasis · Cagayan de Oro</span></span></a>
-      <nav class="nav">
-        <a href="index.html#stays">Stays</a>
-        <a href="#reviews">Reviews</a>
-        <a href="#location">Location</a>
-        <a class="btn btn-dark btn-pill btn-sm" href="#book">Check dates</a>
+      <a class="logo" href="index.html" aria-label="CK Haven home"><span class="word">CK Haven</span><span class="sub">Cagayan de Oro</span></a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav"><span class="nt-bars" aria-hidden="true"><i></i><i></i><i></i></span><span>Menu</span></button>
+      <nav class="nav" id="site-nav" aria-label="Main">
+        <a href="about.html" data-nav="about">About</a>
+        <a href="properties.html" data-nav="properties">Properties</a>
+        <a href="units.html" data-nav="units">Availability</a>
+        <a href="owners.html" data-nav="owners">Owners</a>
+        <a href="tenants.html" data-nav="tenants">Residents</a>
+        <a class="btn btn-primary btn-sm" href="contact.html" data-nav="contact">Contact</a>
       </nav>
     </div>
   </header>
 
-  <main class="wrap" id="main" aria-busy="true">
-    <div class="skeleton" aria-label="Loading"><i class="sk-title"></i><i class="sk-photo"></i><div class="sk-row"><div><i></i><i></i><i class="short"></i></div><i class="sk-card"></i></div></div>
+  <main class="v7-prop" id="main" aria-busy="true">
+    <div class="wrap"><p class="v7-loading">Loading…</p></div>
   </main>
 
-  <div class="mbar" id="mbar"></div>
-
-  <dialog class="sheet full" id="tour" aria-label="Photo tour">
-    <div class="sheet-head"><button class="x" data-close aria-label="Close">‹</button><h2>Photo tour</h2><span></span></div>
-    <div class="ptour" id="tour-body"></div>
+  <dialog class="v7-photos" id="photos" aria-label="All photos">
+    <div class="v7-photos-head"><h2>All photos</h2><button type="button" class="v7-x" data-close aria-label="Close">Close ✕</button></div>
+    <div class="v7-photos-body" id="photos-body"></div>
   </dialog>
 
-  <dialog class="lightbox" id="lightbox" aria-label="Photo viewer">
-    <div class="lb">
-      <div class="lb-top"><button data-lb="close">✕ Close</button><span id="lb-count"></span><span id="lb-room" class="small"></span></div>
-      <div class="lb-stage"><figure class="lb-fig"><img alt=""><figcaption id="lb-cap"></figcaption></figure><button class="lb-arrow prev" data-lb="prev" aria-label="Previous photo">‹</button><button class="lb-arrow next" data-lb="next" aria-label="Next photo">›</button></div>
-    </div>
-  </dialog>
-
-  <dialog class="sheet" id="rules" aria-label="House rules">
-    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><h2>House rules</h2><span></span></div>
-    <div class="sheet-body" id="rules-body"></div>
-  </dialog>
-
-  <dialog class="sheet" id="amen" aria-label="All amenities">
-    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><h2>What this place offers</h2><span></span></div>
-    <div class="sheet-body" id="amen-body"></div>
-  </dialog>
-
-  <dialog class="sheet dates-sheet" id="dates" aria-label="Choose dates">
-    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><div class="ds-head"><h2 id="ds-title">Select dates</h2><div class="muted xs" id="ds-sub"></div></div><span></span></div>
-    <div class="ds-dow" aria-hidden="true"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
-    <div class="ds-body"><div data-cal="sheet"></div></div>
-    <div class="ds-foot"><button class="u" data-clear>Clear dates</button><div class="ds-total" id="ds-total"></div><button class="btn btn-dark" id="ds-done">Close</button></div>
-  </dialog>
-
-  <dialog class="sheet" id="request" aria-label="Send your request">
-    <div class="sheet-head"><button class="x" data-close aria-label="Close"></button><h2 id="req-title">Request to book</h2><span></span></div>
-    <div class="sheet-body" id="req-body"></div>
-  </dialog>
+  <div class="v7-mbar" id="mbar" hidden></div>
 
   <footer class="site-footer"><div class="wrap"></div></footer>
   <script type="module" src="js/property.js"></script>

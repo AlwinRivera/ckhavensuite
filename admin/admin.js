@@ -1,10 +1,11 @@
-// CK Haven host admin. Structured editing like a host app: Today, Calendar, Listing,
-// Website and Changes. Saves go to the admin API, which commits to GitHub.
-import { $, $$, esc, money, plural, monthHTML, todayISO, pretty, nightsBetween, addDays, icons, toast as baseToast, timeAgo } from "../js/common.js";
+// CK Haven admin for a small property management company: Overview, Units, Properties (buildings),
+// Inbox, Calendar (only when a unit takes nightly guests), Website and Changes. Saves go to the
+// admin API, which commits to GitHub.
+import { $, $$, esc, money, plural, monthHTML, todayISO, pretty, nightsBetween, addDays, icons, toast as baseToast, timeAgo, MINDANAO, PROVINCES, CATEGORIES, MODES, categoryLabel, placeOf } from "../js/common.js";
 
 // ---------------- setup ----------------
 const TOKEN_KEY = "ckhaven-admin-token";
-const S = { token: load(TOKEN_KEY), user: null, site: null, siteSha: null, bookings: [], avail: { properties: {} }, tab: "today", prop: null, cal: {} };
+const S = { token: load(TOKEN_KEY), user: null, site: null, siteSha: null, bookings: [], avail: { properties: {} }, tab: "overview", prop: null, bldg: 0, cal: {} };
 function load(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function save(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
 const app = $("#app");
@@ -14,6 +15,15 @@ const siteBase = () => (S.site?.siteUrl ? S.site.siteUrl.replace(/\/?$/, "/") : 
 const prop = () => S.site.properties.find((p) => p.id === S.prop) || S.site.properties[0];
 const isOwner = () => S.user?.role === "owner";
 const clone = (o) => structuredClone(o);
+// Each unit is available now, coming soon (a tenant is moving out) or rented.
+const AV = { available: "Available", soon: "Coming soon", rented: "Rented" };
+const avOf = (p) => (AV[p.availability] ? p.availability : "available");
+const avText = (p) => `${AV[avOf(p)]}${avOf(p) === "soon" && p.availableFrom ? ` from ${pretty(p.availableFrom)}` : ""}`;
+const hasNightly = () => S.site.properties.some((p) => p.stayTypes?.nightly);
+const bldgs = () => (S.site.buildings ||= []);
+const bldg = () => bldgs()[S.bldg] || bldgs()[0];
+const unitsIn = (name, site = S.site) => site.properties.filter((p) => (p.building || "") === name);
+const WORDMARK = `<span class="ad-word">CK Haven<small>Admin</small></span>`;
 
 // ---------------- demo mode ----------------
 // admin/?demo (or "Try the demo" on the login screen) runs the whole admin in this browser tab:
@@ -53,6 +63,19 @@ async function demoApi(method, path, b = {}) {
   if (key === "DELETE /api/bookings") { st.bookings = st.bookings.filter((x) => !(x.property === b.property && x.start === b.start && x.end === b.end)); keep(); return { ok: true, bookings: clone(st.bookings) }; }
   if (key === "POST /api/photos") return { ok: true, src: `assets/img/u/demo-${Date.now().toString(36)}.jpg` };
   if (key === "GET /api/history") return { changes: st.history.map(({ site, ...c }) => c) };
+  // Owners now write in through the contact form, so the demo has no old-style owner leads.
+  st.submissions ||= [];
+  if (key === "GET /api/submissions") return { submissions: clone(st.submissions) };
+  if (key === "POST /api/submissions/status") { const s = st.submissions.find((x) => x.id === b.id); if (!s) throw new Error("That request can't be found."); Object.assign(s, { status: b.status, decidedBy: D.user.name, ...(b.propertyId ? { propertyId: b.propertyId } : {}) }); keep(); return { ok: true, submission: clone(s) }; }
+  if (key === "DELETE /api/submissions") { st.submissions = st.submissions.filter((x) => x.id !== b.id); keep(); return { ok: true }; }
+  // Two clearly made-up contact-form messages so the Inbox can be tried in the demo.
+  st.enquiries ||= [
+    { id: "demo-e1", date: new Date(Date.now() - 40 * 60e3).toISOString(), status: "new", name: "Sample Visitor (demo)", phone: "+63 900 000 0001", who: "viewing", unit: st.site.properties[0]?.id || "", msg: "This is a made-up message to show how viewing requests arrive. Could I see the unit this Saturday morning?" },
+    { id: "demo-e2", date: new Date(Date.now() - 26 * 3600e3).toISOString(), status: "new", name: "Sample Resident (demo)", phone: "", who: "resident", unit: "", msg: "Made-up example: the bathroom tap is dripping. Could someone take a look this week?" },
+  ];
+  if (key === "GET /api/enquiries") return { enquiries: clone(st.enquiries) };
+  if (key === "POST /api/enquiries/status") { const x = st.enquiries.find((q) => q.id === b.id); if (!x) throw new Error("That message can't be found."); Object.assign(x, { status: b.status, handledBy: b.status === "done" ? D.user.name : "" }); keep(); return { ok: true, enquiry: clone(x) }; }
+  if (key === "DELETE /api/enquiries") { st.enquiries = st.enquiries.filter((q) => q.id !== b.id); keep(); return { ok: true }; }
   if (key === "POST /api/restore") {
     const old = st.history.find((c) => c.sha === b.sha);
     if (!old) throw new Error("That version can't be found.");
@@ -90,9 +113,9 @@ function showLogin(msg = "") {
   app.innerHTML = `
     <main class="login">
       <form class="login-card" id="login">
-        <a class="logo" href="../index.html"><img src="../assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">Host</span></span></a>
-        <h1>Log in to manage your stays</h1>
-        <p class="muted small" style="margin:0 0 20px">Calendar, prices, photos and everything guests see.</p>
+        <a class="logo" href="../index.html">${WORDMARK}</a>
+        <h1>Log in</h1>
+        <p class="muted small" style="margin:0 0 20px">Units, buildings, messages and the website, in one place.</p>
         <label class="fld"><span>Email</span><input type="email" name="email" autocomplete="username" required></label>
         <label class="fld"><span>Password</span><input type="password" name="password" autocomplete="current-password" required></label>
         <div class="login-err" role="alert">${esc(msg)}</div>
@@ -120,7 +143,7 @@ function showLogin(msg = "") {
 }
 function logout() {
   if (ed.dlg.open) { ed.dirty = false; ed.dlg.close(); }
-  Object.assign(S, { token: null, user: null, tab: "today", cal: {} });
+  Object.assign(S, { token: null, user: null, tab: "overview", cal: {} });
   if (DEMO) { DEMO = false; D.state = null; saveSession(DEMO_KEY, null); if (location.search.includes("demo")) history.replaceState(null, "", location.pathname); }
   else save(TOKEN_KEY, null); // leaving the demo keeps any real login saved on this device
   showLogin();
@@ -134,7 +157,7 @@ async function boot() {
     S.user = me.user;
     setData(data);
     if (!S.site.properties.some((p) => p.id === S.prop)) S.prop = S.site.properties[0].id;
-    if (!TABS.some(([k, , , ownerOnly]) => k === S.tab && (!ownerOnly || isOwner()))) S.tab = "today";
+    if (!tabs().some(([k]) => k === S.tab)) S.tab = "overview";
     shell();
   } catch (err) {
     if (S.token) showLogin(err.message);
@@ -144,23 +167,27 @@ function setData(d) { S.site = d.site; S.siteSha = d.siteSha; S.bookings = d.boo
 async function refresh() { setData(await api("GET", "/api/data")); }
 
 // ---------------- shell ----------------
+// [key, label, icon, owner only, shown when]. The short-stay calendar isn't a tab: it opens from
+// a unit's Short stays section and the Overview, and only matters for direct nightly bookings.
 const TABS = [
-  ["today", "Today", icons.home],
-  ["calendar", "Calendar", icons.cal],
-  ["listing", "Listing", icons.grid, true],
+  ["overview", "Overview", icons.home],
+  ["units", "Units", icons.grid, true],
+  ["properties", "Properties", icons.pin, true],
+  ["inbox", "Inbox", icons.chat],
   ["website", "Website", icons.spark, true],
   ["changes", "Changes", icons.clock, true],
 ];
+const tabs = () => TABS.filter(([, , , own, when]) => (!own || isOwner()) && (!when || when()));
 function tabsHTML(cls) {
-  return `<nav class="ad-tabs ${cls}" aria-label="Sections">${TABS.filter((t) => !t[3] || isOwner()).map(([k, l, ic]) => `<button type="button" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ic}<span>${l}</span></button>`).join("")}</nav>`;
+  return `<nav class="ad-tabs ${cls}" aria-label="Sections">${tabs().map(([k, l, ic]) => `<button type="button" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ic}<span>${l}</span></button>`).join("")}</nav>`;
 }
 function shell() {
   const u = S.user;
   app.innerHTML = `${DEMO ? `<div class="demo-bar" role="status"><b>Demo</b> Try anything: changes stay in this browser tab and never reach the real website. <button class="u" data-logout>Leave the demo</button></div>` : ""}
     <header class="ad-top"><div class="bar">
-      <a class="logo" href="../index.html" target="_blank" rel="noopener" title="Open the website"><img src="../assets/brand/logo-mark.png" alt=""><span><span class="word">CK Haven</span><span class="sub">Host</span></span></a>
+      <a class="logo" href="../index.html" target="_blank" rel="noopener" title="Open the website">${WORDMARK}</a>
       ${tabsHTML("")}
-      <div class="ad-user"><span class="who"><b>${esc(u.name)}</b> <span class="muted">· ${u.role === "owner" ? "Owner" : "Co-host"}</span></span><div class="avatar">${esc(u.name[0])}</div><button class="u small" data-logout>Log out</button></div>
+      <div class="ad-user"><span class="who"><b>${esc(u.name)}</b> <span class="muted">· ${u.role === "owner" ? "Owner" : "Co-host"}</span></span><div class="avatar" title="${esc(u.name)} · ${u.role === "owner" ? "Owner" : "Co-host"}">${esc(u.name[0])}</div><button class="u small" data-logout>Log out</button></div>
     </div></header>
     <main class="ad-main" id="view"></main>
     ${tabsHTML("bottom")}
@@ -172,14 +199,22 @@ app.addEventListener("click", (e) => {
   if (t) { S.tab = t.dataset.tab; S.cal = {}; shell(); scrollTo(0, 0); return; }
   if (e.target.closest("[data-logout]")) return logout();
   const p = e.target.closest("[data-prop]");
-  if (p) { S.prop = p.dataset.prop; S.cal = {}; render(); }
+  if (p) {
+    S.prop = p.dataset.prop; S.cal = {};
+    if (p.dataset.go) { S.tab = p.dataset.go; shell(); scrollTo(0, 0); } else render();
+    const sec = p.dataset.openSec && LISTING.find((s) => s.id === p.dataset.openSec);
+    if (sec) openEditor(sec, "prop");
+    return;
+  }
+  const bl = e.target.closest("[data-bldg]");
+  if (bl) { S.bldg = Number(bl.dataset.bldg); if (bl.dataset.go) { S.tab = bl.dataset.go; shell(); scrollTo(0, 0); } else render(); }
 });
 function render() {
   $("#bar").hidden = true;
-  ({ today: renderToday, calendar: renderCalendar, listing: renderListing, website: renderWebsite, changes: renderChanges })[S.tab]();
+  ({ overview: renderOverview, units: renderUnits, properties: renderProperties, inbox: renderInbox, calendar: renderCalendar, website: renderWebsite, changes: renderChanges })[S.tab]();
 }
-const propChips = () => S.site.properties.length > 1
-  ? `<div class="chips" role="group" aria-label="Property">${S.site.properties.map((p) => `<button type="button" data-prop="${esc(p.id)}" aria-pressed="${p.id === prop().id}">${esc(p.name)}</button>`).join("")}</div>` : "";
+const propChips = (list = S.site.properties) => list.length > 1
+  ? `<div class="chips" role="group" aria-label="Unit">${list.map((p) => `<button type="button" data-prop="${esc(p.id)}" aria-pressed="${p.id === prop().id}">${esc(p.name)}</button>`).join("")}</div>` : "";
 
 // ---------------- bookings (all channels) ----------------
 /** Airbnb/Booking.com nights from the hourly sync + direct ones straight from the saved list (always fresh). */
@@ -194,45 +229,77 @@ function nightMap(id) {
   return m;
 }
 
-// ---------------- Today ----------------
-function renderToday() {
+// ---------------- Overview ----------------
+// The day's picture for a property manager: what's free, what's rented, who wrote in, what's
+// left to finish. Short-stay check-ins only show up when a unit actually takes nightly guests.
+const rentOf = (p) => { const m = p.stayTypes?.monthly, n = p.stayTypes?.nightly; return m?.price ? `${money(S.site, m.price)}/mo` : n?.price ? `${money(S.site, n.price)}/night` : "No price"; };
+function todoList() {
+  const out = [];
+  for (const p of S.site.properties) {
+    const go = (sec, text) => out.push(`<li>${esc(text)} <button class="u" data-prop="${esc(p.id)}" data-go="units" data-open-sec="${sec}">Fix it</button></li>`);
+    if (!allPhotos(p).length) go("photos", `${p.name}: add photos`);
+    if (p.status === "hidden") go("status", `${p.name} is hidden from the website`);
+    else for (const [t, st] of Object.entries(p.stayTypes || {})) if (!st.confirmed) go("pricing", `${p.name}: confirm the ${t === "monthly" ? "monthly rent" : "nightly rate"}`);
+    if (avOf(p) === "soon" && !p.availableFrom) go("status", `${p.name}: add the date it's free from`);
+    if (p.building && !bldgs().some((b) => b.name === p.building)) go("location", `${p.name}: its building "${p.building}" isn't in Properties yet`);
+  }
+  bldgs().forEach((b, i) => {
+    const miss = [!b.photo && "a photo", !b.description?.length && "a description", !b.amenities?.length && "amenities"].filter(Boolean);
+    if (miss.length) out.push(`<li>${esc(b.name)}: add ${miss.join(", ").replace(/, ([^,]*)$/, " and $1")} <button class="u" data-bldg="${i}" data-go="properties">Fix it</button></li>`);
+  });
+  return out;
+}
+function renderOverview() {
   const hr = new Date().getHours();
-  const all = S.site.properties.flatMap((p) => events(p.id).map((b) => ({ ...b, unit: p.name })));
-  const ins = all.filter((b) => b.start === today), outs = all.filter((b) => b.end === today);
-  const staying = all.filter((b) => b.start <= today && b.end > today);
-  const upcoming = all.filter((b) => b.end > today).slice(0, 12);
-  const nights30 = S.site.properties.reduce((n, p) => n + [...nightMap(p.id).keys()].filter((d) => d >= today && nightsBetween(today, d) < 30).length, 0);
-  const missing = S.site.properties.flatMap((p) => Object.entries(p.channels || {}).filter(([, c]) => c.url && !c.ical).map(([k]) => `${names[k] || k} (${p.name})`));
-  const unconfirmed = S.site.properties.flatMap((p) => Object.entries(p.stayTypes).filter(([, st]) => !st.confirmed).map(([t]) => `${t === "monthly" ? "Monthly" : "Nightly"} rate (${p.name})`));
-  const wd = { weekday: "short", month: "short", day: "numeric" };
+  const ps = S.site.properties.filter((p) => p.status !== "hidden");
+  const count = (k) => ps.filter((p) => avOf(p) === k).length;
+  const todo = isOwner() ? todoList() : [];
   $("#view").innerHTML = `
     <h1>Good ${hr < 12 ? "morning" : hr < 18 ? "afternoon" : "evening"}, ${esc(S.user.name.split(" ")[0])}</h1>
-    <p class="ad-sub">${S.avail.updated ? `Bookings last changed ${timeAgo(S.avail.updated)}. Airbnb and Booking.com calendars are checked every hour.` : "Calendars are checked every hour."}</p>
-    ${isOwner() && (missing.length || unconfirmed.length) ? `<div class="notice"><b>To finish setting up</b><ul style="margin:6px 0 0;padding-left:18px">
-      ${missing.map((m) => `<li>Add the calendar link for ${esc(m)} in <button class="u" data-tab="listing">Listing → Booking links</button></li>`).join("")}
-      ${unconfirmed.map((m) => `<li>Confirm the ${esc(m)} in <button class="u" data-tab="listing">Listing → Pricing</button> so guests see exact totals</li>`).join("")}
-    </ul></div>` : ""}
+    <p class="ad-sub">${plural(ps.length, "unit")} on the website across ${((n) => `${n} ${n === 1 ? "property" : "properties"}`)(new Set(ps.map((p) => p.building || p.name)).size)}.</p>
     <div class="today-cards">
-      ${[["Checking in today", ins.length ? ins.map((b) => names[b.source]).join(", ") : "No one"],
-         ["Checking out today", outs.length ? outs.map((b) => names[b.source]).join(", ") : "No one"],
-         ["Currently hosting", staying.length ? staying.map((b) => `until ${pretty(b.end)}`).join(", ") : "All free"],
-         ["Booked, next 30 nights", `${Math.round((nights30 / (30 * S.site.properties.length)) * 100)}%`]].map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join("")}
+      <div><small>Available</small><b>${count("available")}</b></div>
+      <div><small>Coming soon</small><b>${count("soon")}</b></div>
+      <div><small>Rented</small><b>${count("rented")}</b></div>
+      <button type="button" data-tab="inbox"><small>New messages</small><b id="ov-new">…</b></button>
     </div>
+    ${todo.length ? `<section class="panel"><h2 class="ad-h2">To finish</h2><ul class="todo">${todo.join("")}</ul></section>` : ""}
     <section class="panel">
-      <h2 style="font-size:1.2rem">Upcoming</h2>
-      <table class="list"><tr><th>Where</th><th>From</th><th>Check in</th><th>Check out</th><th>Nights</th></tr>
-        ${upcoming.map((b) => `<tr><td>${esc(b.unit)}</td><td><span class="dot" style="background:var(--${b.source})"></span> ${names[b.source]}${b.label && b.source === "direct" ? ` <span class="muted xs">${esc(b.label)}</span>` : ""}</td><td>${pretty(b.start, wd)}</td><td>${pretty(b.end, wd)}</td><td>${nightsBetween(b.start, b.end)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Nothing booked yet.</td></tr>`}
+      <h2 class="ad-h2">Units</h2>
+      <table class="list"><tr><th>Unit</th><th>Property</th><th>Status</th><th>Rent</th>${isOwner() ? "<th></th>" : ""}</tr>
+        ${S.site.properties.map((p) => `<tr><td><b>${esc(p.name)}</b>${p.status === "hidden" ? ` <span class="pill hidden">Hidden</span>` : ""}</td><td>${esc(p.building || "—")}</td><td><span class="av av-${avOf(p)}">${esc(avText(p))}</span></td><td>${esc(rentOf(p))}</td>${isOwner() ? `<td><button class="mini" data-prop="${esc(p.id)}" data-go="units">Edit</button></td>` : ""}</tr>`).join("")}
       </table>
-      <p style="margin:16px 0 0"><button class="btn btn-dark btn-sm" data-tab="calendar">Open calendar</button></p>
     </section>
-    <section class="panel">
-      <h2 style="font-size:1.2rem">Calendar sync</h2>
-      <table class="list">${S.site.properties.flatMap((p) => Object.entries(S.avail.properties?.[p.id]?.channels || {}).map(([k, v]) => `<tr><td>${esc(p.name)} · ${names[k] || esc(k)}</td><td class="status-${esc(v)}">${{ ok: "Synced", error: "Couldn't read the calendar link. Check it.", "not-configured": "No calendar link yet", demo: "Sample data (demo mode)" }[v] || esc(v)}</td></tr>`)).join("") || `<tr><td class="muted">No channels yet.</td></tr>`}</table>
+    ${hasNightly() ? shortStaysHTML() : ""}`;
+  // Unread count fills in once the inbox answers; a missing inbox just shows a dash.
+  Promise.all([api("GET", "/api/enquiries").catch(() => null), isOwner() ? api("GET", "/api/submissions").catch(() => null) : null]).then(([e, s]) => {
+    const el = $("#ov-new");
+    if (!el) return;
+    if (!e && !s) { el.textContent = "—"; return; }
+    el.textContent = [...(e?.enquiries || []), ...(s?.submissions || [])].filter((x) => x.status === "new").length;
+  });
+}
+function shortStaysHTML() {
+  const all = S.site.properties.flatMap((p) => events(p.id).map((b) => ({ ...b, unit: p.name })));
+  const ins = all.filter((b) => b.start === today), outs = all.filter((b) => b.end === today);
+  const upcoming = all.filter((b) => b.end > today).slice(0, 6);
+  const wd = { weekday: "short", month: "short", day: "numeric" };
+  const sync = S.site.properties.flatMap((p) => Object.entries(S.avail.properties?.[p.id]?.channels || {}).map(([k, v]) => `<tr><td>${esc(p.name)} · ${names[k] || esc(k)}</td><td class="status-${esc(v)}">${{ ok: "Synced", error: "Couldn't read the calendar link. Check it.", "not-configured": "No calendar link yet", demo: "Sample data (demo mode)" }[v] || esc(v)}</td></tr>`));
+  return `<section class="panel">
+      <h2 class="ad-h2">Short stays</h2>
+      <p class="muted small" style="margin:-4px 0 12px">Checking in today: ${ins.length ? esc(ins.map((b) => `${b.unit} (${names[b.source]})`).join(", ")) : "no one"}. Checking out: ${outs.length ? esc(outs.map((b) => b.unit).join(", ")) : "no one"}.</p>
+      <table class="list"><tr><th>Unit</th><th>From</th><th>In</th><th>Out</th><th>Nights</th></tr>
+        ${upcoming.map((b) => `<tr><td>${esc(b.unit)}</td><td><span class="dot" style="background:var(--${b.source})"></span> ${names[b.source]}</td><td>${pretty(b.start, wd)}</td><td>${pretty(b.end, wd)}</td><td>${nightsBetween(b.start, b.end)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">No upcoming short stays.</td></tr>`}
+      </table>
+      ${sync.length ? `<details class="ad-more"><summary>Airbnb and Booking.com calendar sync</summary><table class="list">${sync.join("")}</table></details>` : ""}
+      <p style="margin:16px 0 0"><button class="btn btn-soft btn-sm" data-tab="calendar">Block dates</button></p>
     </section>`;
 }
 
 // ---------------- Calendar ----------------
 function renderCalendar() {
+  const nightly = S.site.properties.filter((p) => p.stayTypes?.nightly);
+  if (!nightly.some((p) => p.id === S.prop) && nightly.length) S.prop = nightly[0].id;
   const p = prop();
   const nights = nightMap(p.id);
   const c = S.cal;
@@ -251,9 +318,10 @@ function renderCalendar() {
     return { cls: cls.join(" "), disabled: d < today, title: b ? (b.source === "direct" ? b.label || "Direct booking" : `Booked on ${names[b.source]}`) : "" };
   };
   $("#view").innerHTML = `
-    <h1>Calendar</h1>
-    <p class="ad-sub">Tap a start date and an end date to block nights for a direct booking or a break. Airbnb and Booking.com bookings come in by themselves.</p>
-    ${propChips()}
+    <button type="button" class="ad-back" data-tab="${isOwner() ? "units" : "overview"}">← ${isOwner() ? "Units" : "Overview"}</button>
+    <h1>Block dates</h1>
+    <p class="ad-sub">For short stays booked with you directly. Tap the first night and the checkout day; Airbnb and Booking.com stop selling those nights at their next calendar check. Their own bookings show here by themselves.</p>
+    ${propChips(nightly)}
     <div class="legend"><span><span class="dot" style="background:var(--airbnb)"></span>Airbnb</span><span><span class="dot" style="background:var(--booking)"></span>Booking.com</span><span><span class="dot" style="background:var(--direct)"></span>Direct or blocked</span></div>
     <section class="panel"><div class="ad-cal">${months.map((m) => monthHTML(m.getFullYear(), m.getMonth(), dayClass)).join("")}</div></section>
     <section class="panel">
@@ -414,7 +482,7 @@ function findField(fields, path, base = "") {
 const ed = { dlg: $("#editor"), draft: null, dirty: false, section: null, scope: null };
 function openEditor(section, scope) {
   ed.section = section; ed.scope = scope; ed.dirty = false; phOpen = null;
-  ed.draft = clone(scope === "site" ? S.site : prop());
+  ed.draft = clone(scope === "site" ? S.site : scope === "building" ? bldg() : prop());
   $("#ed-title").textContent = section.title;
   $("#ed-status").textContent = "";
   drawEditor();
@@ -484,12 +552,19 @@ $("#ed-save").addEventListener("click", async () => {
   if (ed.section.check) { const msg = ed.section.check(ed.draft); if (msg) return toast(msg); }
   let next;
   if (ed.scope === "site") next = ed.draft;
-  else { next = clone(S.site); next.properties[next.properties.findIndex((p) => p.id === S.prop)] = ed.draft; }
+  else if (ed.scope === "building") {
+    next = clone(S.site);
+    const old = next.buildings[S.bldg].name;
+    ed.draft.name = String(ed.draft.name || "").trim();
+    next.buildings[S.bldg] = ed.draft;
+    // Units point at their building by name, so a rename carries over to them.
+    if (old !== ed.draft.name) for (const p of next.properties) if (p.building === old) p.building = ed.draft.name;
+  } else { next = clone(S.site); next.properties[next.properties.findIndex((p) => p.id === S.prop)] = ed.draft; }
   btn.disabled = true; btn.textContent = "Saving…";
   try {
     const r = await api("PUT", "/api/site", { site: next, sha: S.siteSha, message: `Update ${ed.section.title.toLowerCase()}${ed.scope === "site" ? "" : ` · ${ed.draft.name}`}` });
     S.site = next; S.siteSha = r.siteSha;
-    if (ed.draft.id && ed.scope !== "site") S.prop = ed.draft.id;
+    if (ed.draft.id && ed.scope === "prop") S.prop = ed.draft.id;
     ed.dirty = false; ed.dlg.close();
     toast("Saved. It's live on the website in about a minute.");
     render();
@@ -631,56 +706,76 @@ async function variants(file) {
 }
 
 // ---------------- Listing ----------------
+const RESIDENTIAL = new Set(["condo", "house", "townhouse", "apartment", "room"]);
 const ICONS = [["pool", "Pool"], ["key", "Key / self check-in"], ["pin", "Location pin"], ["spark", "Sparkle"], ["home", "Home"], ["wifi", "Wi-Fi"], ["car", "Car / parking"], ["leaf", "Garden"], ["bed", "Bed"], ["tv", "TV"], ["shield", "Security"], ["users", "Guests"]];
 const photoOptions = (p) => allPhotos(p).map((ph) => [ph.src, ph.alt || ph.src.split("/").pop()]);
 const LISTING = [
+  { id: "status", title: "Status & availability", preview: (p) => `${p.status === "hidden" ? "Hidden" : "On the website"} · ${avText(p)}`,
+    intro: "Rented units drop off the Availability page but keep their own page, marked as rented. Coming soon shows the date a new tenant can move in.",
+    check: (p) => (p.status !== "hidden" && !allPhotos(p).length ? "Add at least one photo before putting it on the website."
+      : p.status !== "hidden" && !Object.values(p.stayTypes || {}).some((st) => st.price > 0) && !p.sale ? "Set a price before putting it on the website."
+      : p.status !== "hidden" && !p.locality ? "Add the city or town under Location before putting it on the website." : ""),
+    fields: [
+    { type: "row", fields: [
+      F("availability", "Availability", "select", { options: [["available", "Available now"], ["soon", "Coming soon"], ["rented", "Rented"]] }),
+      F("availableFrom", "Free from", "text", { input: "date", hint: "For coming soon: the first day someone can move in." })] },
+    F("status", "On the website", "select", { options: [["live", "Shown: anyone can find it"], ["hidden", "Hidden: a draft, only people with the link"]] }),
+    { type: "info", html: (p) => `<span>Web address</span><div class="copy"><code>${esc(siteBase())}property.html?id=${esc(p.id)}</code><button type="button" class="mini" data-copy="${esc(siteBase())}property.html?id=${esc(p.id)}">Copy</button></div>` },
+    { type: "info", html: () => (S.site.properties.length > 1 ? `<span>Remove this unit</span><button type="button" class="btn btn-soft btn-sm" data-delete-prop style="justify-self:start;color:#b3363a">Delete unit…</button><small>You can bring it back from Changes.</small>` : "") },
+  ] },
   { id: "photos", title: "Photos", custom: photosHTML, preview: (p) => `${plural(allPhotos(p).length, "photo")} in ${plural(p.tour.length, "room")}`, thumbs: true },
   { id: "basics", title: "Title & description", preview: (p) => p.title, fields: [
-    F("title", "Listing title", "text", { hint: "Shown at the top of the listing. Keep it short: what it is and the best feature." }),
-    { type: "row", fields: [F("name", "Short name"), F("kind", "Type of place", "text", { placeholder: "Entire condo" })] },
+    F("title", "Headline", "text", { hint: "Shown at the top of the unit's page. Keep it short: what it is and the best feature." }),
+    { type: "row", fields: [F("name", "Short name"), F("category", "Property type", "select", { options: (p) => [["", "Choose"], ...CATEGORIES.filter(([k]) => RESIDENTIAL.has(k) || k === p.category)] }), F("kind", "Type shown on the website", "text", { placeholder: "Entire condo" })] },
     F("summary", "One-line summary", "textarea", { rows: 2 }),
     F("description", "Description", "paras"),
     F("highlights", "Highlights (the 3–4 best things)", "list", { itemLabel: (h) => h.title || "New highlight", addLabel: "Add highlight", def: { icon: "spark", title: "", text: "" }, fields: [
       F("icon", "Icon", "select", { options: ICONS }), F("title", "Title"), F("text", "Detail")] }),
   ] },
-  { id: "rooms", title: "Guests & rooms", preview: (p) => `${plural(p.guests, "guest")} · ${plural(p.bedrooms, "bedroom")} · ${plural(p.beds, "bed")} · ${plural(p.baths, "bath")}`, fields: [
-    { type: "row", fields: [F("guests", "Max guests", "number", { step: 1 }), F("bedrooms", "Bedrooms", "number", { step: 1 }), F("beds", "Beds", "number", { step: 1 }), F("baths", "Bathrooms", "number", { step: 0.5 })] },
+  { id: "rooms", title: "Rooms & size", preview: (p) => [plural(p.bedrooms, "bedroom"), plural(p.baths, "bath"), p.size].filter(Boolean).join(" · "), fields: [
+    { type: "row", fields: [F("bedrooms", "Bedrooms", "number", { step: 1 }), F("baths", "Bathrooms", "number", { step: 0.5 }), F("beds", "Beds", "number", { step: 1 }), F("size", "Floor area", "text", { placeholder: "28 m²" })] },
+    F("pets", "Pets", "select", { options: [["", "Go by the building rules"], ["yes", "Pets allowed"], ["no", "No pets"], ["ask", "Ask us"]] }),
+  ] },
+  { id: "rules", title: "Short stays", when: (p) => p.stayTypes?.nightly, preview: (p) => [p.guests && `Up to ${plural(p.guests, "guest")}`, p.rules?.checkIn && `check-in ${p.rules.checkIn}`].filter(Boolean).join(" · ") || "Not set yet",
+    intro: "Only for nightly guests. Monthly tenants don't see these.", fields: [
+    { type: "row", fields: [F("guests", "Max guests", "number", { step: 1 }), F("rules.checkIn", "Check-in"), F("rules.checkOut", "Checkout")] },
+    F("rules.selfCheckIn", "Check-in method"),
+    F("rules.cancellation", "Cancellation policy", "textarea"),
+    { type: "info", html: () => `<span>Direct bookings</span><button type="button" class="btn btn-soft btn-sm" data-open-cal style="justify-self:start">Block dates for a direct booking</button><small>So Airbnb and Booking.com don't sell the same nights.</small>` },
     F("sleeping", "Where guests sleep", "list", { itemLabel: (s) => s.room || "New room", addLabel: "Add a sleeping area", def: { room: "", beds: "", photo: "" }, fields: [
       { type: "row", fields: [F("room", "Room"), F("beds", "Beds", "text", { placeholder: "1 queen bed" })] }, F("photo", "Photo", "select", { options: (p) => [["", "No photo"], ...photoOptions(p)] })] }),
   ] },
-  { id: "pricing", title: "Pricing", preview: (p) => Object.entries(p.stayTypes).map(([t, s]) => `${money(S.site, s.price)} ${t === "monthly" ? "month" : "night"}${s.confirmed ? "" : " (estimate)"}`).join(" · "), fields: [
-    F("stayTypes.nightly", "Offer short stays (per night)", "present", { def: { price: 0, minNights: 1, confirmed: false }, fields: [
-      { type: "row", fields: [F("price", "Nightly price (₱)", "number", { step: 1 }), F("minNights", "Minimum nights", "number", { step: 1, min: 1 })] },
-      F("confirmed", "This is the real price", "check", { hint: "When ticked, guests see an exact total and the request message quotes it. When not, the site says \"About ₱…\" and asks you to confirm." })] }),
-    F("stayTypes.monthly", "Offer monthly rentals", "present", { def: { price: 0, minNights: 30, note: "", confirmed: false }, fields: [
-      { type: "row", fields: [F("price", "Monthly price (₱)", "number", { step: 1 }), F("minNights", "Minimum nights", "number", { step: 1, min: 1 })] },
+  { id: "pricing", title: "Rent & rates", preview: (p) => [...Object.entries(p.stayTypes || {}).sort(([a]) => (a === "monthly" ? -1 : 1)).map(([t, s]) => `${money(S.site, s.price)} ${t === "monthly" ? "month" : "night"}${s.confirmed ? "" : " (estimate)"}`)].filter(Boolean).join(" · ") || "No rent set",
+    intro: "Monthly rent comes first on the website. Add a nightly rate only if this unit also takes short-stay guests.", fields: [
+    F("stayTypes.monthly", "Monthly rent", "present", { def: { price: 0, minNights: 30, note: "", confirmed: false }, fields: [
+      { type: "row", fields: [F("price", "Monthly price (₱)", "number", { step: 1 }), F("minNights", "Minimum stay (nights)", "number", { step: 1, min: 1 })] },
       F("note", "Note", "text", { placeholder: "Utilities billed separately" }),
       F("confirmed", "This is the real price", "check")] }),
-    F("addons.parking", "Offer parking as an add-on", "present", { def: { label: "Parking", price: 300, per: "night" }, fields: [F("price", "Parking per night (₱)", "number", { step: 1 })] }),
-    F("promos.earlyBird", "Early-bird discount", "present", { def: { confirmed: true, percent: 10, daysAhead: 7, label: "Early-bird: 10% off when you book 7+ days before check-in" }, fields: [
-      { type: "row", fields: [F("percent", "Discount %", "number", { step: 1 }), F("daysAhead", "Book at least … days ahead", "number", { step: 1 })] },
-      F("label", "How it's described"),
-      F("confirmed", "Show this discount on the website", "check")] }),
+    F("stayTypes.nightly", "Short stays (per night)", "present", { def: { price: 0, minNights: 1, confirmed: false }, fields: [
+      { type: "row", fields: [F("price", "Nightly price (₱)", "number", { step: 1 }), F("minNights", "Minimum nights", "number", { step: 1, min: 1 })] },
+      F("confirmed", "This is the real price", "check", { hint: "When not ticked, the website says \"About ₱…\"." })] }),
   ] },
   { id: "amenities", title: "Amenities", preview: (p) => (p.topAmenities || []).slice(0, 4).join(", "), fields: [
     F("topAmenities", "Top amenities (shown first, up to 10)", "lines", { rows: 8 }),
     F("amenities", "All amenities by group", "list", { itemLabel: (g) => g.group || "New group", addLabel: "Add a group", def: { group: "", items: [] }, fields: [
       F("group", "Group name"), F("items", "Items", "lines"), F("missing", "These are NOT included (shown crossed out)", "check")] }),
   ] },
-  { id: "location", title: "Location", preview: (p) => `${p.building}, ${p.address || p.area}`, fields: [
-    { type: "row", fields: [F("building", "Building"), F("area", "Area")] },
-    F("address", "Street address"), F("city", "City, country"),
-    F("neighborhood", "About the neighborhood", "textarea"),
-    { type: "row", fields: [F("map.lat", "Latitude", "number"), F("map.lon", "Longitude", "number"), F("map.zoom", "Map zoom", "number", { step: 1 })] },
-    F("map.google", "Google Maps link", "text", { input: "url", hint: "In Google Maps, open the building, press Share, copy the link. Right-click the pin to copy latitude and longitude." }),
+  { id: "location", title: "Location", intro: "The building's photo, amenities, neighbourhood and map are edited once, in Properties. A house can be its own property there too.", preview: (p) => [p.building, placeOf(p).city, p.province].filter(Boolean).join(", "), fields: [
+    { type: "row", fields: [F("province", "Province", "select", { options: [["", "Choose a province"], ...PROVINCES.map((x) => [x, x])] }), F("locality", "City or town", "text", { hint: "Shown on the home page and used for search, e.g. Cagayan de Oro, Davao City." })] },
+    { type: "row", fields: [F("building", "Property (building)", "select", { options: (p) => [["", "Not in a building (a house or lot)"], ...bldgs().map((b) => [b.name, b.name]), ...(p.building && !bldgs().some((b) => b.name === p.building) ? [[p.building, `${p.building} (not in Properties yet)`]] : [])], hint: "Add new buildings in the Properties tab." }), F("area", "Barangay or area")] },
+    F("address", "Street address"), F("city", "City, country (for the address)"),
   ] },
-  { id: "rules", title: "House rules", preview: (p) => `Check-in ${p.rules?.checkIn} · Checkout ${p.rules?.checkOut}`, fields: [
-    { type: "row", fields: [F("rules.checkIn", "Check-in"), F("rules.checkOut", "Checkout")] },
-    F("rules.selfCheckIn", "Check-in method"),
-    F("rules.maxGuests", "Max guests", "number", { step: 1 }),
-    F("rules.cancellation", "Cancellation policy", "textarea"),
+  { id: "owner", title: "Unit owner (private)", preview: (p) => (p.owner?.name ? `${p.owner.name} · ${p.owner.role || "Owner"}` : "Not recorded"),
+    intro: "Who owns this unit, for your own records. It isn't shown on the website: every enquiry comes to you.", fields: [
+    F("owner", "Record the unit owner", "present", { def: { name: "", role: "Owner", phone: "", whatsapp: "", viber: "", messenger: "", email: "", responseTime: "", bio: "" }, fields: [
+      { type: "row", fields: [F("name", "Name"), F("role", "Role", "select", { options: ["Owner", "Agent", "Broker", "Property manager", "Host"].map((x) => [x, x]) })] },
+      { type: "row", fields: [F("phone", "Mobile (calls and texts)", "text", { input: "tel" }), F("email", "Email", "text", { input: "email" })] },
+      { type: "row", fields: [F("whatsapp", "WhatsApp number", "text", { input: "tel" }), F("viber", "Viber number", "text", { input: "tel" })] },
+      F("messenger", "Facebook page username (for Messenger)", "text", { hint: "The part after facebook.com/" }),
+      F("responseTime", "Response time", "text", { placeholder: "Usually replies within a day" }),
+      F("bio", "Notes", "textarea", { rows: 3, hint: "Contract dates, fee, anything to remember." })] }),
   ] },
-  { id: "channels", title: "Booking links & calendar sync", preview: (p) => Object.entries(p.channels || {}).map(([k, c]) => `${names[k] || k}: ${c.ical ? "syncing" : c.url ? "link only" : "off"}`).join(" · "),
+  { id: "channels", title: "Airbnb & Booking.com", when: (p) => p.stayTypes?.nightly, preview: (p) => Object.entries(p.channels || {}).map(([k, c]) => `${names[k] || k}: ${c.ical ? "syncing" : c.url ? "link only" : "off"}`).join(" · "),
     intro: "Paste each platform's calendar export link so the website knows which nights are taken. It checks them every hour.", fields: [
     F("channels.airbnb.url", "Airbnb listing link", "text", { input: "url", placeholder: "https://www.airbnb.com/rooms/…" }),
     F("channels.airbnb.ical", "Airbnb calendar export link", "text", { input: "url", hint: "Airbnb → Calendar → Availability → Connect calendars → Export calendar." }),
@@ -698,33 +793,124 @@ const LISTING = [
         F("text", "What they wrote", "textarea", { rows: 3 })] }),
     ] }),
   ] },
-  { id: "visibility", title: "Visibility", preview: (p) => (p.status === "hidden" ? "Hidden from the website" : "Live on the website"),
-    check: (p) => (p.status !== "hidden" && !allPhotos(p).length ? "Add at least one photo before setting it to Live." : p.status !== "hidden" && !Object.values(p.stayTypes).some((s) => s.price > 0) ? "Set a price before setting it to Live." : ""),
-    fields: [
-    F("status", "Show on the website", "select", { options: [["live", "Live: guests can find it"], ["hidden", "Hidden: only people with the link"]] }),
-    { type: "info", html: (p) => `<span>Web address</span><div class="copy"><code>${esc(siteBase())}property.html?id=${esc(p.id)}</code><button type="button" class="mini" data-copy="${esc(siteBase())}property.html?id=${esc(p.id)}">Copy</button></div>` },
-    { type: "info", html: () => (S.site.properties.length > 1 ? `<span>Remove this property</span><button type="button" class="btn btn-soft btn-sm" data-delete-prop style="justify-self:start;color:#b3363a">Delete property…</button><small>You can bring it back from Changes.</small>` : "") },
-  ] },
 ];
 
-function renderListing() {
+function renderUnits() {
   const p = prop();
+  const secs = LISTING.filter((x) => !x.when || x.when(p));
   $("#view").innerHTML = `
-    <h1>Listing</h1>
-    <p class="ad-sub">Everything guests see about each place. Changes go live about a minute after you save.</p>
-    ${propChips()}
+    <div class="ad-head"><div><h1>Units</h1><p class="ad-sub">Each home you rent out: its status, photos, rent and details. Changes go live about a minute after you save.</p></div>
+      <button class="btn btn-dark btn-sm" data-add-prop>+ Add a unit</button></div>
+    ${S.site.properties.length > 1 ? `<div class="unit-pick" role="group" aria-label="Unit">${S.site.properties.map((x) => `<button type="button" data-prop="${esc(x.id)}" aria-pressed="${x.id === p.id}"><b>${esc(x.name)}</b><span class="av av-${avOf(x)}">${esc(x.status === "hidden" ? "Hidden draft" : AV[avOf(x)])}</span></button>`).join("")}</div>` : ""}
     <div class="prop-head">
-      <div><h2 style="margin:0">${esc(p.name)}</h2><span class="pill ${p.status === "hidden" ? "hidden" : "live"}">${p.status === "hidden" ? "Hidden" : "Live"}</span></div>
-      <div class="row" style="gap:8px">${allPhotos(p).length ? `<a class="btn btn-soft btn-sm" href="../property.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View listing ↗</a>` : `<span class="muted small">Add a photo to preview it</span>`}<button class="btn btn-soft btn-sm" data-add-prop>+ Add a property</button></div>
+      <div><h2 style="margin:0">${esc(p.name)}</h2><span class="av av-${avOf(p)}">${esc(avText(p))}</span>${p.status === "hidden" ? `<span class="pill hidden">Hidden</span>` : ""}</div>
+      <div class="row" style="gap:8px">${allPhotos(p).length ? `<a class="btn btn-soft btn-sm" href="../property.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View on the website ↗</a>` : `<span class="muted small">Add a photo to preview it</span>`}</div>
     </div>
-    <div class="sec-grid">${LISTING.map((s) => `<button type="button" class="sec-card" data-sec="${s.id}"><b>${esc(s.title)}</b><span class="prev">${esc(s.preview(p) || "")}</span>${icons.chevR}${s.thumbs ? `<span class="thumbs">${allPhotos(p).slice(0, 5).map((ph) => `<img src="${esc(thumb(ph))}" alt="" loading="lazy">`).join("")}</span>` : ""}</button>`).join("")}</div>`;
+    <div class="sec-grid">${secs.map((x) => `<button type="button" class="sec-card" data-sec="${x.id}"><b>${esc(x.title)}</b><span class="prev">${esc(x.preview(p) || "")}</span>${icons.chevR}${x.thumbs ? `<span class="thumbs">${allPhotos(p).slice(0, 5).map((ph) => `<img src="${esc(thumb(ph))}" alt="" loading="lazy">`).join("")}</span>` : ""}</button>`).join("")}</div>`;
+}
+
+// ---------------- Properties (buildings) ----------------
+// A building is written once and shared by every unit in it: its photo, amenities, neighbourhood
+// and map. Units point at it by name (Units → Location).
+// Every photo on the units (including ones hidden from a unit's page), building's own unit first.
+const unitPhotos = (name) => {
+  const all = (p) => [...allPhotos(p), ...(p.hiddenPhotos || [])];
+  const own = unitsIn(name).flatMap(all), rest = S.site.properties.flatMap(all);
+  return [...new Map([...own, ...rest].map((ph) => [ph.src, ph])).values()];
+};
+const BUILDING = [
+  { id: "about", title: "Name & description", preview: (b) => b.description?.[0] || "No description yet", fields: [
+    F("name", "Name", "text", { hint: "Renaming it also updates every unit in it." }),
+    F("description", "About the building", "paras", { rows: 6, hint: "A few lines: what it is, who it suits. Leave a blank line between paragraphs." }),
+  ], check: (b) => (!String(b.name || "").trim() ? "The name can't be empty."
+    : bldgs().some((x, i) => i !== S.bldg && x.name.toLowerCase() === b.name.trim().toLowerCase()) ? `There's already a property called ${b.name.trim()}.` : "") },
+  { id: "photo", title: "Photos", thumb: true, preview: (b) => `${b.photo ? "Main photo set" : "No main photo: the website uses a unit photo"}${b.photos?.length ? ` · ${plural(b.photos.length, "extra photo")}` : ""}`,
+    intro: "Choose from the photos already on your units; to use a new one, add it to a unit first.", custom: (b) => `
+    <h3 class="ad-h3">Main photo</h3><p class="muted small">On the property tiles and first on its page.</p>
+    <div class="bl-photos">${[["", "Use a unit photo"], ...unitPhotos(b.name).map((ph) => [ph.src, ph.alt || ""])].map(([src, alt]) => `
+      <label class="bl-ph"><input type="radio" name="bl-photo" data-path="photo" data-type="text" value="${esc(src)}" ${String(b.photo || "") === src ? "checked" : ""}>
+        ${src ? `<img src="${esc(thumb({ src }))}" alt="${esc(alt)}" loading="lazy">` : `<span class="bl-none">Automatic</span>`}</label>`).join("")}</div>
+    <h3 class="ad-h3">More photos</h3><p class="muted small">Shown on the building's page after the pool, gym and other shared spaces. Tick as many as you like.</p>
+    <div class="bl-photos">${unitPhotos(b.name).map((ph) => `
+      <label class="bl-ph"><input type="checkbox" data-bl-extra value="${esc(ph.src)}" ${(b.photos || []).some((x) => x.src === ph.src) ? "checked" : ""}>
+        <img src="${esc(thumb(ph))}" alt="${esc(ph.alt || "")}" loading="lazy"></label>`).join("")}</div>` },
+  { id: "place", title: "Location & neighbourhood", preview: (b) => [b.area, b.province].filter(Boolean).join(", "), fields: [
+    { type: "row", fields: [F("area", "Barangay or area"), F("locality", "City or town")] },
+    F("province", "Province", "select", { options: [["", "Choose a province"], ...PROVINCES.map((x) => [x, x])] }),
+    F("neighborhood", "The neighbourhood", "textarea", { rows: 4, hint: "What's nearby: malls, offices, hospitals, the airport." }),
+    F("map.google", "Google Maps link", "text", { input: "url", hint: "In Google Maps, open the building, press Share, copy the link." }),
+    { type: "row", fields: [F("map.lat", "Latitude", "number"), F("map.lon", "Longitude", "number")] },
+    { type: "info", html: () => "<small>For the map on the property's page. In Google Maps, right-click the building's pin to copy them.</small>" },
+  ] },
+  { id: "amenities", title: "Shared amenities", preview: (b) => (b.amenities || []).slice(0, 4).join(", ") || "None listed", fields: [
+    F("amenities", "Amenities", "lines", { rows: 8, hint: "One per line. Pool, gym, security, parking. Fees and hours are fine to include." }),
+  ] },
+];
+function renderProperties() {
+  const list = bldgs();
+  const loose = S.site.properties.filter((p) => !p.building);
+  if (S.bldg >= list.length) S.bldg = 0;
+  const b = bldg();
+  $("#view").innerHTML = `
+    <div class="ad-head"><div><h1>Properties</h1><p class="ad-sub">The buildings you manage units in. Write each one once; every unit in it shares the photo, amenities and neighbourhood.</p></div>
+      <button class="btn btn-dark btn-sm" data-add-bldg>+ Add a property</button></div>
+    ${list.length ? `<div class="bl-grid">${list.map((x, i) => {
+      const us = unitsIn(x.name), free = us.filter((p) => p.status !== "hidden" && avOf(p) !== "rented").length;
+      return `<button type="button" class="bl-card" data-bldg="${i}" aria-pressed="${i === S.bldg}">
+        <span class="bl-img">${x.photo ? `<img src="${esc(thumb({ src: x.photo }))}" alt="" loading="lazy">` : ""}</span>
+        <b>${esc(x.name)}</b><span class="muted small">${plural(us.length, "unit")}${us.length ? ` · ${free} open` : ""}</span></button>`; }).join("")}</div>` : `<section class="panel"><p class="muted" style="margin:0">No properties yet. Add the first building you manage units in.</p></section>`}
+    ${b ? `<div class="prop-head"><div><h2 style="margin:0">${esc(b.name)}</h2></div>
+      <div class="row" style="gap:8px"><a class="btn btn-soft btn-sm" href="../building.html?name=${encodeURIComponent(b.name)}" target="_blank" rel="noopener">View on the website ↗</a>${unitsIn(b.name).length ? "" : `<button class="btn btn-soft btn-sm" data-del-bldg style="color:#b3363a">Delete</button>`}</div></div>
+    <div class="sec-grid">${BUILDING.map((x) => `<button type="button" class="sec-card" data-sec="${x.id}"><b>${esc(x.title)}</b><span class="prev">${esc(x.preview(b) || "")}</span>${icons.chevR}${x.thumb && b.photo ? `<span class="thumbs"><img src="${esc(thumb({ src: b.photo }))}" alt=""></span>` : ""}</button>`).join("")}</div>
+    <section class="panel"><h2 class="ad-h2">Units in ${esc(b.name)}</h2>
+      ${unitsIn(b.name).length ? `<table class="list">${unitsIn(b.name).map((p) => `<tr><td><b>${esc(p.name)}</b></td><td><span class="av av-${avOf(p)}">${esc(avText(p))}</span></td><td><button class="mini" data-prop="${esc(p.id)}" data-go="units">Edit</button></td></tr>`).join("")}</table>` : `<p class="muted small" style="margin:0">No units yet. In Units, open a unit's Location and choose ${esc(b.name)}.</p>`}
+    </section>` : ""}
+    ${loose.length ? `<p class="muted small">Not in a building: ${loose.map((p) => esc(p.name)).join(", ")}.</p>` : ""}`;
 }
 app.addEventListener("click", async (e) => {
   const sec = e.target.closest("[data-sec]");
-  if (sec && S.tab === "listing") return openEditor(LISTING.find((s) => s.id === sec.dataset.sec), "prop");
+  if (sec && S.tab === "units") return openEditor(LISTING.find((s) => s.id === sec.dataset.sec), "prop");
+  if (sec && S.tab === "properties") return openEditor(BUILDING.find((s) => s.id === sec.dataset.sec), "building");
   if (sec && S.tab === "website") return openEditor(WEBSITE.find((s) => s.id === sec.dataset.sec), "site");
   if (e.target.closest("[data-add-prop]")) return addProperty();
+  if (e.target.closest("[data-add-bldg]")) return addBuilding();
+  if (e.target.closest("[data-del-bldg]")) return deleteBuilding();
 });
+// Building "More photos" ticks: keep { src, alt } copies in the draft, in the order of the grid.
+$("#ed-body").addEventListener("change", (e) => {
+  if (!e.target.matches("[data-bl-extra]") || ed.scope !== "building") return;
+  const ticked = new Set($$("#ed-body [data-bl-extra]:checked").map((x) => x.value));
+  ed.draft.photos = unitPhotos(ed.draft.name).filter((ph) => ticked.has(ph.src)).map(({ src, alt }) => ({ src, alt: alt || "" }));
+  markDirty();
+});
+$("#ed-body").addEventListener("click", (e) => {
+  if (!e.target.closest("[data-open-cal]")) return;
+  if (ed.dirty && !confirm("Leave without saving your changes?")) return;
+  ed.dirty = false; ed.dlg.close();
+  S.tab = "calendar"; S.cal = {}; shell(); scrollTo(0, 0);
+});
+async function saveSite(next, message, done) {
+  try {
+    const r = await api("PUT", "/api/site", { site: next, sha: S.siteSha, message });
+    S.site = next; S.siteSha = r.siteSha; done?.(); render();
+  } catch (err) { toast(err.message); }
+}
+async function addBuilding() {
+  const name = prompt("Name of the building (for example: Avida Towers)")?.trim();
+  if (!name) return;
+  if (bldgs().some((b) => b.name.toLowerCase() === name.toLowerCase())) return toast(`${name} is already in Properties.`);
+  const from = bldg() || {};
+  const next = clone(S.site);
+  (next.buildings ||= []).push({ name, area: "", locality: from.locality || "", province: from.province || "", description: [], neighborhood: "", amenities: [], photo: "", map: { google: "" } });
+  await saveSite(next, `Add property ${name}`, () => { S.bldg = next.buildings.length - 1; toast(`${name} added. Add a photo and amenities, then pick it in a unit's Location.`); });
+}
+async function deleteBuilding() {
+  const b = bldg();
+  if (!confirm(`Delete ${b.name} from Properties? You can bring it back from Changes.`)) return;
+  const next = clone(S.site);
+  next.buildings.splice(S.bldg, 1);
+  await saveSite(next, `Delete property ${b.name}`, () => { S.bldg = 0; toast(`${b.name} deleted.`); });
+}
 $("#ed-body").addEventListener("click", async (e) => {
   if (!e.target.closest("[data-delete-prop]")) return;
   const p = prop();
@@ -738,7 +924,7 @@ $("#ed-body").addEventListener("click", async (e) => {
   } catch (err) { toast(err.message); }
 });
 async function addProperty() {
-  const name = prompt("Name of the new place (for example: CK Haven 2)");
+  const name = prompt("Name of the new unit (for example: One Oasis 12F)");
   if (!name?.trim()) return;
   let id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "unit";
   while (S.site.properties.some((p) => p.id === id)) id += "-2";
@@ -746,12 +932,12 @@ async function addProperty() {
   // carry over (its building, location and house rules); photos, text, prices and reviews start blank.
   const from = prop();
   const p = {
-    id, name: name.trim(), title: name.trim(), status: "hidden",
-    kind: from.kind, city: from.city, building: from.building, area: from.area, address: from.address,
+    id, name: name.trim(), title: name.trim(), status: "hidden", availability: "available", availableFrom: "",
+    kind: from.kind, category: from.category || "", city: from.city, locality: from.locality || "", province: from.province || "", building: from.building, area: from.area, address: from.address,
     map: clone(from.map), neighborhood: from.neighborhood || "",
     summary: "", description: [], size: "",
     guests: 2, bedrooms: 1, beds: 1, baths: 1,
-    stayTypes: Object.fromEntries(Object.entries(from.stayTypes).map(([t, s]) => [t, { price: 0, minNights: s.minNights, confirmed: false }])),
+    stayTypes: Object.fromEntries(Object.entries(from.stayTypes || {}).map(([t, s]) => [t, { price: 0, minNights: s.minNights, confirmed: false }])),
     addons: {}, cover: "", hero: "",
     tour: ["Bedroom", "Living room", "Kitchen", "Bathroom"].map((room) => ({ room, note: "", photos: [] })),
     hiddenPhotos: [], videos: [], rawVideos: [], sleeping: [], highlights: [],
@@ -759,23 +945,31 @@ async function addProperty() {
     rules: clone(from.rules), faq: [],
     channels: { airbnb: { url: "", ical: "" }, booking: { url: "", ical: "" } },
   };
+  if (!Object.keys(p.stayTypes).length) p.stayTypes = { nightly: { price: 0, minNights: 1, confirmed: false } };
   const next = clone(S.site);
   next.properties.push(p);
   try {
     const r = await api("PUT", "/api/site", { site: next, sha: S.siteSha, message: `Add property ${p.name} (hidden)` });
     S.site = next; S.siteSha = r.siteSha; S.prop = id;
-    toast(`${p.name} added as a hidden draft. Location, building amenities and house rules came from ${from.name}; add photos, details and prices, then set it to Live.`);
+    toast(`${p.name} added as a hidden draft in ${from.building || "the same place"} as ${from.name}. Add photos and the rent, then show it on the website.`);
     render();
   } catch (err) { toast(err.message); }
 }
 
 // ---------------- Website (site-wide) ----------------
+// Site address, admin service, demo switch and analytics: set up once by the developer (admin/?dev).
+const DEV = new URLSearchParams(location.search).has("dev");
 const WEBSITE = [
   { id: "brand", title: "Business name", preview: (s) => `${s.brand} · ${s.tagline || ""}`, fields: [F("brand", "Business name"), F("tagline", "Tagline")] },
-  { id: "home", title: "Home page text", preview: (s) => s.home?.headline, fields: [
-    F("home.headline", "Big headline"), F("home.intro", "Intro under the headline", "textarea", { rows: 3 }),
-    F("home.locationTitle", "Location section title"), F("home.locationText", "Location section text", "textarea", { rows: 3 }),
-    F("home.contactTitle", "Contact section title"), F("home.contactText", "Contact section text", "textarea", { rows: 2 }),
+  { id: "home", title: "Home page", preview: (s) => s.home?.headline, fields: [
+    F("home.headline", "Headline on the photo", "text", { hint: "One line. What you do and for whom." }),
+    F("home.intro", "The line under “One team, from viewing to move-out”", "textarea", { rows: 3 }),
+    F("home.promises", "Promises (the three short points)", "list", { hint: "Leave empty to use the standard three: ready on day one, one number, repairs handled. Only promise what you always do.", itemLabel: (x) => x.title || "New promise", addLabel: "Add a promise", def: { title: "", text: "" }, fields: [
+      F("title", "Short title", "text", { placeholder: "Repairs, handled" }), F("text", "One sentence", "text", { placeholder: "Tell us what’s broken. We send someone." })] }),
+    F("home.contactTitle", "Contact page title"), F("home.contactText", "Contact page text", "textarea", { rows: 2 }),
+  ] },
+  { id: "about", title: "About us", preview: (s) => (s.about?.length ? s.about[0] : "Written for you from your details"), fields: [
+    F("about", "About text", "paras", { rows: 10, hint: "Shown on the About page; the first two paragraphs also go on the home page. Leave empty to use the standard text written from your name, years and reviews. Leave a blank line between paragraphs." }),
   ] },
   { id: "contact", title: "Contact & social", preview: (s) => [s.contact?.phone, s.contact?.email].filter(Boolean).join(" · "),
     intro: "Leave a field empty to hide that button on the website.", fields: [
@@ -786,13 +980,12 @@ const WEBSITE = [
     F("contact.instagram", "Instagram link", "text", { input: "url" }),
     F("contact.responseTime", "Response time", "text", { placeholder: "Responds within an hour" }),
   ] },
-  { id: "host", title: "Host profile", preview: (s) => `${s.host?.name} · ${s.host?.yearsHosting} years hosting`, fields: [
+  { id: "host", title: "Team", preview: (s) => [s.host?.name, ...(s.host?.cohosts || [])].filter(Boolean).join(", "), fields: [
     { type: "row", fields: [F("host.name", "Name"), F("host.initial", "Initial (avatar)")] },
-    F("host.bio", "About you", "textarea", { rows: 4 }),
-    { type: "row", fields: [F("host.yearsHosting", "Years hosting", "number", { step: 1 }), F("host.responseRate", "Response rate", "text", { placeholder: "100%" })] },
-    F("host.languages", "Languages", "lines", { rows: 3 }), F("host.cohosts", "Co-hosts", "lines", { rows: 3 }),
+    F("host.yearsHosting", "Years renting out units", "number", { step: 1, hint: "Used in the standard About text." }),
+    F("host.languages", "Languages", "lines", { rows: 3 }), F("host.cohosts", "The rest of the team", "lines", { rows: 3, hint: "First names, one per line." }),
   ] },
-  { id: "advanced", title: "Advanced", preview: (s) => (s.demo ? "Demo mode is on" : "Live mode"), fields: [
+  { id: "advanced", dev: true, title: "Advanced", preview: (s) => (s.demo ? "Demo mode is on" : "Live mode"), fields: [
     F("demo", "Demo mode", "check", { hint: "Shows a “Demo preview” banner and sample bookings. Turn off for real guests." }),
     F("siteUrl", "Website address", "text", { input: "url", hint: "e.g. https://ckhaven.github.io/ckhavensuite/ (used for calendar links and share previews)" }),
     F("adminApi", "Admin service address", "text", { input: "url" }),
@@ -802,9 +995,184 @@ const WEBSITE = [
 function renderWebsite() {
   $("#view").innerHTML = `
     <h1>Website</h1>
-    <p class="ad-sub">Details shared by every page: your name, contact buttons, host profile and home page text.</p>
-    <div class="sec-grid">${WEBSITE.map((s) => `<button type="button" class="sec-card" data-sec="${s.id}"><b>${esc(s.title)}</b><span class="prev">${esc(s.preview(S.site) || "")}</span>${icons.chevR}</button>`).join("")}</div>`;
+    <p class="ad-sub">The company side of the site: the home page, About, your team and how people reach you.</p>
+    <div class="sec-grid">${WEBSITE.filter((s) => !s.dev || DEV).map((s) => `<button type="button" class="sec-card" data-sec="${s.id}"><b>${esc(s.title)}</b><span class="prev">${esc(s.preview(S.site) || "")}</span>${icons.chevR}</button>`).join("")}</div>`;
 }
+
+// ---------------- Inbox ----------------
+// Two kinds of message, both kept private in the admin service (never in the public repo):
+// "Messages" from the website's contact form (viewing requests, residents, questions), and
+// "Owner leads" from the retired "List your property" form (shown only while old ones remain).
+const WHO = { looking: "Looking for a place", viewing: "Wants a viewing", resident: "Resident", owner: "Unit owner", other: "Other" };
+let REQ = { list: null, filter: "new", error: "" };
+const INBOX = { kind: "messages", list: null, filter: "new", error: "" };
+const peso = (n) => (n ? money(S.site, n) : "");
+async function loadRequests() {
+  try { REQ.list = (await api("GET", "/api/submissions")).submissions; REQ.error = ""; }
+  catch (err) { REQ.list = []; REQ.error = err.message; }
+}
+async function loadEnquiries() {
+  try { INBOX.list = (await api("GET", "/api/enquiries")).enquiries; INBOX.error = ""; }
+  catch (err) { INBOX.list = []; INBOX.error = err.message; }
+}
+async function renderInbox() {
+  $("#view").innerHTML = `<h1>Inbox</h1><p class="ad-sub">Loading…</p>`;
+  if (!isOwner()) INBOX.kind = "messages";
+  await Promise.all([loadEnquiries(), isOwner() ? loadRequests() : null]);
+  drawInbox();
+}
+const drawRequests = () => drawInbox();
+function drawInbox() {
+  const newMsgs = (INBOX.list || []).filter((x) => x.status === "new").length;
+  const newLeads = (REQ.list || []).filter((x) => x.status === "new").length;
+  $("#view").innerHTML = `
+    <h1>Inbox</h1>
+    <p class="ad-sub">${INBOX.kind === "leads" ? "Owners who filled in “List your property”. Nothing goes on the website until you add it and show it." : "Messages sent from the website's contact form. The sender also opened their own chat app, so they may have messaged you there too."}</p>
+    ${isOwner() && (REQ.list?.length || REQ.error) && !/switched on/i.test(REQ.error) ? `<div class="seg" role="tablist">${[["messages", "Messages", newMsgs], ["leads", "Owner leads", newLeads]].map(([k, l, n]) => `<button type="button" role="tab" data-inbox="${k}" aria-selected="${INBOX.kind === k}">${l}${n ? ` <span class="badge">${n}</span>` : ""}</button>`).join("")}</div>` : ""}
+    <div id="inbox-body"></div>`;
+  $("#inbox-body").innerHTML = INBOX.kind === "leads" ? leadsHTML() : messagesHTML();
+}
+const offHTML = (what, until) => `<section class="panel"><b>${what} aren't switched on yet</b><p class="muted small" style="margin:6px 0 0">${until} To collect them here, add the SUBMISSIONS storage to the admin service (see README → Host admin).</p></section>`;
+function messagesHTML() {
+  if (INBOX.error) return /switched on/i.test(INBOX.error) ? offHTML("Website messages", "Until they are, contact-form messages only reach you in Messenger, WhatsApp, Viber or email.") : `<section class="panel"><b>Couldn't load messages</b><p class="muted small" style="margin:6px 0 0">${esc(INBOX.error)}</p></section>`;
+  const all = INBOX.list || [];
+  const n = (k) => all.filter((x) => x.status === k).length;
+  const shown = all.filter((x) => x.status === INBOX.filter);
+  return `<div class="chips" role="group" aria-label="Show">${["new", "done"].map((k) => `<button type="button" data-enq-filter="${k}" aria-pressed="${INBOX.filter === k}">${{ new: "To answer", done: "Done" }[k]} (${n(k)})</button>`).join("")}</div>
+    ${shown.length ? shown.map(enquiryCard).join("") : `<section class="panel"><p class="muted" style="margin:0">${INBOX.filter === "new" ? "All caught up." : "Nothing here yet."}</p></section>`}`;
+}
+function enquiryCard(q) {
+  const unit = S.site.properties.find((p) => p.id === q.unit);
+  const num = String(q.phone || "").replace(/[^\d+]/g, "");
+  return `<section class="panel req-card" data-enq="${esc(q.id)}">
+    <div class="req-head"><div><b>${esc(q.name)}</b><div class="muted small">${esc(WHO[q.who] || "Message")}${unit ? ` · ${esc(unit.name)}` : ""} · ${timeAgo(q.date)}${q.status === "done" && q.handledBy ? ` · answered by ${esc(q.handledBy)}` : ""}</div></div>
+      ${unit && isOwner() ? `<button class="btn btn-soft btn-sm" data-prop="${esc(unit.id)}" data-go="units">Open unit</button>` : ""}</div>
+    <p class="enq-msg">${esc(q.msg)}</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+      ${num ? `<a class="btn btn-soft btn-sm" href="tel:${esc(num)}">${icons.phone} Call ${esc(q.phone)}</a><a class="btn btn-soft btn-sm" href="sms:${esc(num)}">Text</a><a class="btn btn-soft btn-sm" href="https://wa.me/${esc(num.replace("+", ""))}" target="_blank" rel="noopener">WhatsApp</a>` : `<span class="muted small">No number given: they'll have written to you in their chat app.</span>`}
+      <span style="flex:1"></span>
+      ${q.status === "new" ? `<button class="btn btn-dark btn-sm" data-enq-status="done">Mark as done</button>` : `<button class="btn btn-soft btn-sm" data-enq-status="new">Move back</button>`}
+      <button class="mini danger" data-enq-delete>Delete</button>
+    </div>
+  </section>`;
+}
+function leadsHTML() {
+  if (REQ.error) return /switched on/i.test(REQ.error) ? offHTML("Owner leads", "Until they are, the form on the website sends the details to you by Messenger, WhatsApp, Viber or email.") : `<section class="panel"><b>Couldn't load owner leads</b><p class="muted small" style="margin:6px 0 0">${esc(REQ.error)}</p></section>`;
+  const all = REQ.list || [];
+  const counts = { new: 0, approved: 0, rejected: 0 };
+  all.forEach((s) => (counts[s.status] = (counts[s.status] || 0) + 1));
+  const shown = all.filter((s) => s.status === REQ.filter);
+  return `<div class="chips" role="group" aria-label="Show">${["new", "approved", "rejected"].map((k) => `<button type="button" data-req-filter="${k}" aria-pressed="${REQ.filter === k}">${{ new: "New", approved: "Added", rejected: "Declined" }[k]} (${counts[k] || 0})</button>`).join("")}</div>
+    ${shown.length ? shown.map(requestCard).join("") : `<section class="panel"><p class="muted" style="margin:0">${REQ.filter === "new" ? "No new owner leads." : "None here."}</p></section>`}`;
+}
+app.addEventListener("click", async (e) => {
+  if (S.tab !== "inbox") return;
+  const k = e.target.closest("[data-inbox]");
+  if (k) { INBOX.kind = k.dataset.inbox; return drawInbox(); }
+  const fl = e.target.closest("[data-enq-filter]");
+  if (fl) { INBOX.filter = fl.dataset.enqFilter; return drawInbox(); }
+  const card = e.target.closest("[data-enq]");
+  if (!card) return;
+  const q = INBOX.list.find((x) => x.id === card.dataset.enq);
+  const btn = e.target.closest("button");
+  try {
+    const st = e.target.closest("[data-enq-status]");
+    if (st) { btn.disabled = true; await api("POST", "/api/enquiries/status", { id: q.id, status: st.dataset.enqStatus }); await loadEnquiries(); return drawInbox(); }
+    if (e.target.closest("[data-enq-delete]")) {
+      if (!confirm(`Delete the message from ${q.name}? It's removed for good.`)) return;
+      await api("DELETE", "/api/enquiries", { id: q.id }); await loadEnquiries(); drawInbox();
+    }
+  } catch (err) { toast(err.message); if (btn) btn.disabled = false; }
+});
+function requestCard(s) {
+  const where = [s.building, s.area, s.locality, s.province].filter(Boolean).join(", ");
+  const prices = [s.nightly && `${peso(s.nightly)}/night`, s.monthly && `${peso(s.monthly)}/month`, s.salePrice && `${peso(s.salePrice)} asking`].filter(Boolean).join(" · ");
+  const num = (v) => String(v || "").replace(/[^\d+]/g, "");
+  const reach = [
+    s.phone && `<a class="btn btn-soft btn-sm" href="tel:${esc(num(s.phone))}">${icons.phone} ${esc(s.phone)}</a>`,
+    s.whatsapp && `<a class="btn btn-soft btn-sm" href="https://wa.me/${esc(num(s.whatsapp).replace("+", ""))}" target="_blank" rel="noopener">WhatsApp</a>`,
+    s.messenger && `<a class="btn btn-soft btn-sm" href="https://m.me/${esc(s.messenger)}" target="_blank" rel="noopener">Messenger</a>`,
+    s.email && `<a class="btn btn-soft btn-sm" href="mailto:${esc(s.email)}">${icons.mail} Email</a>`,
+  ].filter(Boolean).join("");
+  const safeLinks = (text) => esc(text).replace(/https:\/\/[^\s<>"']+/g, (u) => `<a class="u" href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+  return `<section class="panel req-card" data-req="${esc(s.id)}">
+    <div class="req-head"><div><b>${esc(s.title)}</b><div class="muted small">${esc(s.modes.map((m) => MODES[m]?.one || m).join(" · "))} · ${esc(CATEGORIES.find(([k]) => k === s.category)?.[1] || "Property")} · ${timeAgo(s.date)}${s.status !== "new" && s.decidedBy ? ` · ${s.status === "approved" ? "approved" : "declined"} by ${esc(s.decidedBy)}` : ""}</div></div>${s.status === "approved" && s.propertyId ? `<button class="btn btn-soft btn-sm" data-req-open="${esc(s.propertyId)}">Open listing</button>` : ""}</div>
+    <dl class="req-dl">
+      <dt>Where</dt><dd>${esc(where)}</dd>
+      ${[s.bedrooms && `${s.bedrooms} bedroom(s)`, s.baths && `${s.baths} bath(s)`, s.guests && `sleeps ${s.guests}`, s.size && `floor ${esc(s.size)}`, s.lotArea && `lot ${esc(s.lotArea)}`].filter(Boolean).length ? `<dt>Size</dt><dd>${[s.bedrooms && `${s.bedrooms} bedroom(s)`, s.baths && `${s.baths} bath(s)`, s.guests && `sleeps ${s.guests}`, s.size && `floor ${esc(s.size)}`, s.lotArea && `lot ${esc(s.lotArea)}`].filter(Boolean).join(" · ")}</dd>` : ""}
+      ${prices ? `<dt>Prices</dt><dd>${prices}</dd>` : ""}
+      ${s.pets ? `<dt>Pets</dt><dd>${{ yes: "Allowed", no: "Not allowed", ask: "Depends, ask the owner" }[s.pets] || ""}</dd>` : ""}
+      ${s.manage ? `<dt>Management</dt><dd><b>Wants to ask about ${esc(S.site.brand)} managing it</b></dd>` : ""}
+      ${s.description ? `<dt>About</dt><dd style="white-space:pre-wrap">${esc(s.description)}</dd>` : ""}
+      ${s.photos ? `<dt>Photos</dt><dd>${safeLinks(s.photos)}</dd>` : ""}
+      ${s.links ? `<dt>Links</dt><dd>${safeLinks(s.links)}</dd>` : ""}
+      <dt>From</dt><dd>${esc(s.name)} · ${esc(s.role)}</dd>
+    </dl>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:12px 0">${reach}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+      ${s.status !== "approved" ? `<button class="btn btn-primary btn-sm" data-req-approve>Add as a hidden unit</button>` : ""}
+      ${s.status === "new" ? `<button class="btn btn-soft btn-sm" data-req-status="rejected">Decline</button>` : `<button class="btn btn-soft btn-sm" data-req-status="new">Move back to New</button>`}
+      <button class="mini danger" data-req-delete>Delete</button>
+    </div>
+  </section>`;
+}
+/** A submission → a hidden draft listing. Only what the owner sent; photos, rules and the rest are added in Listing. */
+function propertyFromRequest(s) {
+  let id = s.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "listing";
+  while (S.site.properties.some((p) => p.id === id)) id = `${id.slice(0, 44)}-${Math.random().toString(36).slice(2, 5)}`;
+  const label = CATEGORIES.find(([k]) => k === s.category)?.[1] || "Property";
+  const paras = s.description.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+  const p = {
+    id, name: s.title.slice(0, 60), title: s.title, status: "hidden",
+    kind: s.category === "room" ? "Private room" : `Entire ${label.toLowerCase()}`, category: s.category,
+    building: s.building, area: s.area, address: "", city: `${s.locality}, Philippines`, locality: s.locality, province: s.province,
+    summary: (paras[0] || "").split(/(?<=\.)\s/)[0].slice(0, 200), description: paras, size: s.size,
+    guests: s.guests || 0, bedrooms: s.bedrooms || 0, beds: s.bedrooms || 0, baths: s.baths || 0, ...(s.pets ? { pets: s.pets } : {}),
+    stayTypes: {
+      ...(s.modes.includes("stay") ? { nightly: { price: s.nightly || 0, minNights: 1, confirmed: false } } : {}),
+      ...(s.modes.includes("rent") ? { monthly: { price: s.monthly || 0, minNights: 30, note: "", confirmed: false } } : {}),
+    },
+    ...(s.modes.includes("sale") ? { sale: { price: s.salePrice || 0, negotiable: false, floorArea: s.size, lotArea: s.lotArea, documents: "", financing: "", note: "" } } : {}),
+    owner: { name: s.name, role: s.role, phone: s.phone, whatsapp: s.whatsapp, viber: s.viber, messenger: s.messenger, email: s.email, responseTime: "", bio: "" },
+    addons: {}, cover: "", hero: "",
+    tour: ["Living area", "Bedroom", "Kitchen", "Bathroom", "Outside"].map((room) => ({ room, note: "", photos: [] })),
+    hiddenPhotos: [], videos: [], rawVideos: [], sleeping: [], highlights: [], amenities: [], topAmenities: [], faq: [],
+    channels: { airbnb: { url: "", ical: "" }, booking: { url: "", ical: "" } },
+  };
+  if (s.modes.includes("stay")) p.rules = { checkIn: "", checkOut: "", maxGuests: s.guests || 0, cancellation: "" };
+  return p;
+}
+app.addEventListener("click", async (e) => {
+  if (S.tab !== "inbox") return;
+  const fl = e.target.closest("[data-req-filter]");
+  if (fl) { REQ.filter = fl.dataset.reqFilter; return drawRequests(); }
+  const op = e.target.closest("[data-req-open]");
+  if (op) { S.prop = op.dataset.reqOpen; S.tab = "units"; shell(); scrollTo(0, 0); return; }
+  const card = e.target.closest("[data-req]");
+  if (!card) return;
+  const s = REQ.list.find((x) => x.id === card.dataset.req);
+  const btn = e.target.closest("button");
+  try {
+    if (e.target.closest("[data-req-approve]")) {
+      btn.disabled = true; btn.textContent = "Adding…";
+      const p = propertyFromRequest(s);
+      const next = clone(S.site);
+      next.properties.push(p);
+      const r = await api("PUT", "/api/site", { site: next, sha: S.siteSha, message: `Add ${p.name} from a listing request (hidden)` });
+      S.site = next; S.siteSha = r.siteSha;
+      await api("POST", "/api/submissions/status", { id: s.id, status: "approved", propertyId: p.id });
+      toast(`${p.name} added as a hidden draft with ${s.name} recorded as the owner. Add photos and check the details, then show it on the website.`);
+      S.prop = p.id; S.tab = "units"; shell(); scrollTo(0, 0);
+      return;
+    }
+    const st = e.target.closest("[data-req-status]");
+    if (st) { await api("POST", "/api/submissions/status", { id: s.id, status: st.dataset.reqStatus }); await loadRequests(); return drawRequests(); }
+    if (e.target.closest("[data-req-delete]")) {
+      if (!confirm(`Delete the request for ${s.title}? Their details are removed for good.`)) return;
+      await api("DELETE", "/api/submissions", { id: s.id }); await loadRequests(); drawRequests();
+    }
+  } catch (err) { toast(err.message); if (btn) btn.disabled = false; }
+});
 
 // ---------------- Changes ----------------
 async function renderChanges() {

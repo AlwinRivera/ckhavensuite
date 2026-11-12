@@ -16,6 +16,13 @@ ALLOWED_ORIGINS = "https://YOUR-GITHUB-USER.github.io"
 # binding = "RATE"
 # id = ""
 
+# Needed for the admin Inbox: contact-form messages (and any old owner leads). Free KV namespace. They stay private here,
+# never in the GitHub repo, because they hold people's phone numbers and emails.
+# Create with: npx wrangler kv namespace create SUBMISSIONS   then paste the id here.
+# [[kv_namespaces]]
+# binding = "SUBMISSIONS"
+# id = ""
+
 # Secrets (never put these in this file):
 #   npx wrangler secret put GITHUB_TOKEN     fine-grained token, this repo only, "Contents: read and write"
 #   npx wrangler secret put SESSION_SECRET   any long random string (64+ characters)

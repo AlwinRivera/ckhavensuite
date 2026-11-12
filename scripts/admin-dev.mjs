@@ -56,8 +56,19 @@ if (!secret) { secret = randomBytes(32).toString("hex"); await writeFile(secretF
 const users = await readFile(new URL("users.json", dev), "utf8").catch(() => "[]");
 if (users.trim() === "[]") console.warn("No admin logins yet. Create one: node scripts/admin-user.mjs --dev --email you@example.com --name You");
 
+/** Stands in for a Cloudflare KV namespace: one JSON file in .admin-dev/ (git-ignored). */
+class LocalKV {
+  constructor(name) { this.file = new URL(`${name}.json`, dev); }
+  async all() { return JSON.parse(await readFile(this.file, "utf8").catch(() => "{}")); }
+  async get(k) { return (await this.all())[k] ?? null; }
+  async put(k, v) { const a = await this.all(); a[k] = String(v); await writeFile(this.file, JSON.stringify(a, null, 1)); }
+  async delete(k) { const a = await this.all(); delete a[k]; await writeFile(this.file, JSON.stringify(a, null, 1)); }
+  async list({ prefix = "", limit = 1000 } = {}) { return { keys: Object.keys(await this.all()).filter((k) => k.startsWith(prefix)).slice(0, limit).map((name) => ({ name })) }; }
+}
+
 const env = {
   STORE: new LocalStore(),
+  SUBMISSIONS: new LocalKV("submissions"),
   ADMIN_USERS: users,
   SESSION_SECRET: secret,
   ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080",

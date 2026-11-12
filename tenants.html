@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Residents · CK Haven</title>
+  <meta name="description" content="Living in or staying at a CK Haven unit? Report a repair, ask a question, or reach us quickly when something urgent happens.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://alwinrivera.github.io/ckhavensuite/tenants.html">
+  <link rel="canonical" href="https://alwinrivera.github.io/ckhavensuite/tenants.html">
+  <meta property="og:title" content="Tenant and guest help · CK Haven">
+  <meta property="og:description" content="Report a repair or ask CK Haven a question.">
+  <meta property="og:image" content="https://alwinrivera.github.io/ckhavensuite/assets/brand/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#f6f3ed">
+  <link rel="icon" href="assets/brand/favicon.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="tenants">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="logo" href="index.html" aria-label="CK Haven home"><span class="word">CK Haven</span><span class="sub">Cagayan de Oro</span></a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav"><span class="nt-bars" aria-hidden="true"><i></i><i></i><i></i></span><span>Menu</span></button>
+      <nav class="nav" id="site-nav" aria-label="Main">
+        <a href="about.html" data-nav="about">About</a>
+        <a href="properties.html" data-nav="properties">Properties</a>
+        <a href="units.html" data-nav="units">Availability</a>
+        <a href="owners.html" data-nav="owners">Owners</a>
+        <a href="tenants.html" data-nav="tenants">Residents</a>
+        <a class="btn btn-primary btn-sm" href="contact.html" data-nav="contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head page-head-dark photo-head">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><i>›</i><span>Residents</span></nav>
+        <div class="eyebrow">Residents and guests</div>
+        <h1 class="display-2">How can we help?</h1>
+        <p class="lead">Living in or staying at one of our units? Report a repair or ask us anything. Your message goes straight to the CK Haven team.</p>
+        <div class="jump">
+          <a href="#repair">Report a repair</a>
+          <a href="#ask">Ask a question</a>
+          <a href="#urgent">Urgent problem</a>
+          <a href="#info">Rent and moving out</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap ten-layout">
+      <div class="ten-main">
+        <section class="form-card ten-card" id="repair">
+          <h2>Report a repair</h2>
+          <p class="muted">Tell us what's wrong and where. A photo helps: attach it after the message opens in your chat app.</p>
+          <form id="repair-form" novalidate>
+            <div class="fld-row">
+              <label class="fld"><span>Your name</span><input name="name" required maxlength="80" autocomplete="name"></label>
+              <label class="fld"><span>Your unit</span><select name="unit" class="unit-pick" required></select></label>
+            </div>
+            <div class="fld-row">
+              <label class="fld"><span>What needs fixing?</span><select name="kind">
+                <option>Plumbing or a leak</option><option>Electrical or lights</option><option>Air conditioning</option><option>Appliance</option>
+                <option>Door, lock or keys</option><option>Wi-Fi or TV</option><option>Pests</option><option>Something else</option>
+              </select></label>
+              <label class="fld"><span>How urgent?</span><select name="urgency">
+                <option>Can wait a few days</option><option>Soon, it's affecting daily life</option><option>Urgent, it's getting worse</option>
+              </select></label>
+            </div>
+            <label class="fld"><span>Describe the problem</span><textarea name="details" rows="4" required maxlength="1500" placeholder="What happened, where in the unit, and since when"></textarea></label>
+            <div class="fld-row">
+              <label class="fld"><span>Best time for a visit <small>optional</small></span><input name="when" maxlength="80" placeholder="Weekdays after 5 PM"></label>
+              <label class="fld"><span>Mobile number <small>optional</small></span><input name="phone" type="tel" maxlength="24" autocomplete="tel"></label>
+            </div>
+            <label class="fld-check"><input type="checkbox" name="enter"><span>It's OK to enter while I'm out, if I'm told beforehand</span></label>
+            <div class="form-err" id="repair-err" role="alert"></div>
+            <p class="hint">Send it with</p>
+            <div class="channels-grid" id="repair-send"></div>
+          </form>
+        </section>
+
+        <section class="form-card ten-card" id="ask">
+          <h2>Ask a question</h2>
+          <p class="muted">About your rent, lease, deposit, parking, moving in or out, or anything else.</p>
+          <form id="ask-form" novalidate>
+            <div class="fld-row">
+              <label class="fld"><span>Your name</span><input name="name" required maxlength="80" autocomplete="name"></label>
+              <label class="fld"><span>Your unit</span><select name="unit" class="unit-pick"></select></label>
+            </div>
+            <label class="fld"><span>Your question</span><textarea name="q" rows="4" required maxlength="1500"></textarea></label>
+            <div class="form-err" id="ask-err" role="alert"></div>
+            <p class="hint">Send it with</p>
+            <div class="channels-grid" id="ask-send"></div>
+          </form>
+        </section>
+      </div>
+
+      <aside class="ten-side">
+        <section class="urgent" id="urgent">
+          <h2><span data-ic="phone"></span>Urgent problem?</h2>
+          <p>A burst pipe, water coming in, no power in the unit, or you're locked out: call us now instead of sending a message.</p>
+          <a class="btn btn-primary btn-block" id="urgent-call" href="#">Call us</a>
+          <p class="xs muted" style="margin:12px 0 0">For fire, a medical emergency or a crime in progress, call <a href="tel:911">911</a> first, then let us know.</p>
+        </section>
+
+        <section class="info-list" id="info">
+          <h2>Good to know</h2>
+          <details open><summary>Paying rent</summary><p>Your lease says how much is due and when. If you need the payment details again, or a receipt, ask us with the form.</p></details>
+          <details><summary>Moving out</summary><p>Tell us as early as you can, and check your lease for the notice period. We'll arrange a walk-through and return your deposit as the lease says.</p></details>
+          <details><summary>Guests on short stays</summary><p>Your check-in details and house rules are in your booking messages. For anything during your stay, message us here or in the booking app.</p></details>
+          <details><summary>Pets</summary><p>It depends on the unit. Each unit's page lists its pet rule. Ask us before bringing a pet in.</p></details>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="wrap"></div></footer>
+  <script type="module" src="js/tenants.js"></script>
+</body>
+</html>

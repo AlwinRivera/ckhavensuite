@@ -19,7 +19,17 @@ const first = site.properties.find((p) => p.status !== "hidden") || site.propert
 const pages = [
   { file: "index.html", url: base },
   { file: "property.html", url: `${base}property.html?id=${encodeURIComponent(first.id)}` },
+  { file: "about.html", url: `${base}about.html` },
+  { file: "properties.html", url: `${base}properties.html` },
+  { file: "units.html", url: `${base}units.html` },
+  { file: "contact.html", url: `${base}contact.html` },
+  { file: "owners.html", url: `${base}owners.html` },
+  { file: "tenants.html", url: `${base}tenants.html` },
 ];
+// Every live listing goes in the sitemap, not just the one property.html's share tags point at.
+const listingUrls = site.properties.filter((p) => p.status !== "hidden" && p.id !== first.id).map((p) => `${base}property.html?id=${encodeURIComponent(p.id)}`);
+// One page per building or subdivision that has live units.
+const buildingUrls = [...new Set(site.properties.filter((p) => p.status !== "hidden" && (p.building || "").trim()).map((p) => p.building.trim()))].map((b) => `${base}building.html?name=${encodeURIComponent(b)}`);
 
 for (const { file, url } of pages) {
   let html = await read(file);
@@ -35,7 +45,7 @@ for (const { file, url } of pages) {
 
 await write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${pages.map((p) => `  <url><loc>${p.url.replace(/&/g, "&amp;")}</loc></url>`).join("\n")}
+${[...pages.map((p) => p.url), ...listingUrls, ...buildingUrls].map((u) => `  <url><loc>${u.replace(/&/g, "&amp;")}</loc></url>`).join("\n")}
 </urlset>
 `);
 const robots = (await read("robots.txt")).replace(/\nSitemap:.*$/m, "").trimEnd();

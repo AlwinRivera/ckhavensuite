@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Contact · CK Haven</title>
+  <meta name="description" content="Call, text or message CK Haven about renting a unit, a repair in your home, or having us manage your property in Cagayan de Oro.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://alwinrivera.github.io/ckhavensuite/contact.html">
+  <link rel="canonical" href="https://alwinrivera.github.io/ckhavensuite/contact.html">
+  <meta property="og:title" content="Contact · CK Haven">
+  <meta property="og:description" content="Call, text or message CK Haven about renting a unit, a repair in your home, or having us manage your property in Cagayan de Oro.">
+  <meta property="og:image" content="https://alwinrivera.github.io/ckhavensuite/assets/brand/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#f6f3ed">
+  <link rel="icon" href="assets/brand/favicon.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="contact">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="logo" href="index.html" aria-label="CK Haven home"><span class="word">CK Haven</span><span class="sub">Cagayan de Oro</span></a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav"><span class="nt-bars" aria-hidden="true"><i></i><i></i><i></i></span><span>Menu</span></button>
+      <nav class="nav" id="site-nav" aria-label="Main">
+        <a href="about.html" data-nav="about">About</a>
+        <a href="properties.html" data-nav="properties">Properties</a>
+        <a href="units.html" data-nav="units">Availability</a>
+        <a href="owners.html" data-nav="owners">Owners</a>
+        <a href="tenants.html" data-nav="tenants">Residents</a>
+        <a class="btn btn-primary btn-sm" href="contact.html" data-nav="contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="v7-talk v7-talk-page" id="contact">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><i>›</i><span>Contact</span></nav>
+      </div>
+      <div class="wrap v7-talk-grid">
+        <div>
+          <h1 class="v7-h2" id="contact-title">Let's talk</h1>
+          <p class="v7-text" id="contact-text">Looking for a place, living in one of ours, or thinking about handing us your unit. Call, text or message.</p>
+          <div class="v7-talk-info" id="talk-info"></div>
+        </div>
+        <form class="v7-form form-card" id="talk-form" novalidate>
+          <div class="fld-row">
+            <label class="fld"><span>Your name</span><input name="name" required maxlength="80" autocomplete="name"></label>
+            <label class="fld"><span>Phone (optional)</span><input name="phone" maxlength="30" autocomplete="tel" inputmode="tel"></label>
+          </div>
+          <label class="fld"><span>I'm</span><select name="who" id="talk-who" data-fancy>
+            <option value="looking">Looking for a place</option>
+            <option value="viewing">Asking to view a unit</option>
+            <option value="resident">Living in one of your units</option>
+            <option value="owner">An owner with a unit</option>
+            <option value="other">Asking something else</option>
+          </select></label>
+          <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+          <label class="fld"><span>Message</span><textarea name="msg" id="talk-msg" rows="5" required maxlength="1500"></textarea></label>
+          <div class="form-err" id="talk-err" role="alert"></div>
+          <p class="hint">Send it with</p>
+          <div class="channels-grid" id="talk-send"></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="wrap"></div></footer>
+  <script type="module" src="js/contact.js"></script>
+</body>
+</html>
