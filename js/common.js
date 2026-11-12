@@ -74,7 +74,7 @@ export function monthHTML(year, month, dayClass) {
 }
 
 // ---- contact channels ----
-export function channelList(site, message) {
+export function channelList(site, message, subject = "Booking request") {
   const c = site.contact || {};
   const t = encodeURIComponent(message);
   const num = (v) => (v || "").replace(/[^\d+]/g, "");
@@ -83,10 +83,35 @@ export function channelList(site, message) {
     c.whatsapp && { key: "whatsapp", label: "WhatsApp", sub: c.phone, color: "#25d366", icon: icons.wa, url: `https://wa.me/${num(c.whatsapp).replace("+", "")}?text=${t}` },
     c.viber && { key: "viber", label: "Viber", sub: c.phone, color: "#7360f2", icon: icons.viber, url: `viber://chat?number=${encodeURIComponent(num(c.viber))}`, paste: true },
     c.phone && { key: "sms", label: "Text message", sub: c.phone, color: "#3a3a3a", icon: icons.sms, url: `sms:${num(c.phone)}?&body=${t}` },
-    c.email && { key: "email", label: "Email", sub: c.email, color: "#c25b73", icon: icons.mail, url: `mailto:${c.email}?subject=${encodeURIComponent("Booking request")}&body=${t}` },
+    c.email && { key: "email", label: "Email", sub: c.email, color: "#5a646d", icon: icons.mail, url: `mailto:${c.email}?subject=${encodeURIComponent(subject)}&body=${t}` },
     c.phone && { key: "call", label: "Call", sub: c.phone, color: "#4f7a5a", icon: icons.phone, url: `tel:${num(c.phone)}` },
   ];
   return list.filter(Boolean);
+}
+
+/**
+ * A message form with no server: the visitor fills it in, then picks WhatsApp, Messenger, Viber, text
+ * or email, and the message opens there ready to send. `build(fields)` writes the message text.
+ */
+export function wireMessageForm(site, form, { build, subject, sendEl, errEl, onSend }) {
+  const chans = channelList(site, "", subject).filter((c) => c.key !== "call");
+  sendEl.innerHTML = chans.map((c) => `<button type="button" class="ch-btn" data-send="${c.key}"><i style="background:${c.color}">${c.icon}</i><span>${esc(c.label)}<small>${esc(c.sub || "")}</small></span></button>`).join("");
+  sendEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-send]");
+    if (!b) return;
+    const missing = [...form.querySelectorAll("[required]")].find((x) => !x.value.trim());
+    if (missing) {
+      const label = missing.closest("label")?.querySelector("span")?.firstChild?.textContent.trim() || "this field";
+      errEl.textContent = `Please fill in "${label}" first.`;
+      missing.focus();
+      return;
+    }
+    errEl.textContent = "";
+    const msg = build(form.elements);
+    onSend?.(form.elements);
+    openChannel(channelList(site, msg, subject).find((c) => c.key === b.dataset.send), msg);
+  });
+  form.addEventListener("submit", (e) => e.preventDefault());
 }
 
 /** Copy the request to the clipboard (Messenger/Viber can't pre-fill text) and open the channel. */
@@ -130,20 +155,264 @@ export function demoBar(site) {
   document.body.prepend(bar);
 }
 
+/** Does a listing calendar sync (so "available" claims are real)? */
+export const calendarSynced = (site, p) => Object.values(p.channels || {}).some((ch) => ch.ical) || !!site.demo;
+
+// ---- the listing model: stays, rentals and homes for sale across Mindanao ----
+/** Regions → provinces → main cities and towns. Listings in places not on this list still show up under their province. */
+export const MINDANAO = [
+  ["Northern Mindanao", [["Misamis Oriental", ["Cagayan de Oro", "Opol", "El Salvador", "Gingoog"]], ["Bukidnon", ["Malaybalay", "Valencia", "Manolo Fortich"]], ["Camiguin", ["Mambajao"]], ["Misamis Occidental", ["Ozamiz", "Oroquieta"]], ["Lanao del Norte", ["Iligan"]]]],
+  ["Davao Region", [["Davao del Sur", ["Davao City", "Digos"]], ["Davao del Norte", ["Tagum", "Samal", "Panabo"]], ["Davao Oriental", ["Mati"]], ["Davao de Oro", ["Nabunturan"]]]],
+  ["SOCCSKSARGEN", [["South Cotabato", ["General Santos", "Koronadal"]], ["Cotabato", ["Kidapawan"]], ["Sarangani", ["Alabel"]], ["Sultan Kudarat", ["Tacurong"]]]],
+  ["Zamboanga Peninsula", [["Zamboanga del Sur", ["Zamboanga City", "Pagadian"]], ["Zamboanga del Norte", ["Dipolog", "Dapitan"]], ["Zamboanga Sibugay", ["Ipil"]]]],
+  ["Caraga", [["Agusan del Norte", ["Butuan"]], ["Surigao del Norte", ["Surigao City", "General Luna (Siargao)", "Dapa"]], ["Surigao del Sur", ["Tandag", "Bislig"]], ["Agusan del Sur", ["Bayugan"]]]],
+  ["BARMM", [["Maguindanao del Norte", ["Cotabato City"]], ["Lanao del Sur", ["Marawi"]]]],
+];
+export const PROVINCES = MINDANAO.flatMap(([, ps]) => ps.map(([p]) => p));
+export const regionOf = (province) => MINDANAO.find(([, ps]) => ps.some(([x]) => x === province))?.[0] || "Mindanao";
+/** Where a listing is: { city, province, region }. Older listings only had "city": "Cagayan de Oro City, Philippines". */
+export function placeOf(p) {
+  const city = p.locality || String(p.city || "").split(",")[0].replace(/ City$/, "") || "Mindanao";
+  const province = p.province || "";
+  return { city, province, region: regionOf(province) };
+}
+export const CATEGORIES = [["condo", "Condo"], ["house", "House"], ["townhouse", "Townhouse"], ["apartment", "Apartment"], ["room", "Room or bedspace"], ["lot", "Lot"], ["commercial", "Commercial space"], ["resort", "Resort or beach house"]];
+export const categoryLabel = (p) => CATEGORIES.find(([k]) => k === p.category)?.[1] || String(p.kind || "Property").replace("Entire ", "").replace(/^./, (m) => m.toUpperCase());
+
+/** The three ways a place can be listed. A listing can be in more than one (a condo for nightly stays and monthly rent). */
+// Rentals come first: CK Haven leads with homes to rent, then short stays, then sales.
+export const MODES = {
+  rent: { label: "Rentals", one: "Monthly rental", many: "rentals" },
+  stay: { label: "Stays", one: "Short stay", many: "places to stay" },
+  sale: { label: "For sale", one: "For sale", many: "homes or lots for sale" },
+};
+/** "yes" | "no" | "ask": the listing's own pets setting, else read from its house rules. */
+export function petsOf(p) {
+  if (["yes", "no", "ask"].includes(p.pets)) return p.pets;
+  const rules = (p.rules?.list || []).join(" ").toLowerCase();
+  if (/\bno pets\b|pets? not allowed/.test(rules)) return "no";
+  if (/pets? allowed|pet-friendly|pets? welcome/.test(rules)) return "yes";
+  return "ask";
+}
+export const PETS_LABEL = { yes: "Pets allowed", no: "No pets", ask: "Ask about pets" };
+
+// Leaflet + OpenStreetMap: free, loaded only when a map is first shown.
+const LEAFLET = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/";
+export function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: `${LEAFLET}leaflet.min.css` }));
+  return new Promise((ok, fail) => {
+    document.head.append(Object.assign(document.createElement("script"), { src: `${LEAFLET}leaflet.min.js`, onload: () => ok(window.L), onerror: fail }));
+  });
+}
+export const OSM_TILES = ["https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }];
+/** The building, subdivision or block a listing is in; listings without one stand alone under their own name. */
+export const buildingOf = (p) => (p.building || "").trim() || p.name;
+/** The building record kept in Admin → Properties, if there is one. */
+export const buildingInfo = (site, name) => (site.buildings || []).find((b) => b.name === name) || null;
+/** available | soon | rented. Units without a status are available. */
+export const availOf = (p) => (["available", "soon", "rented"].includes(p.availability) ? p.availability : "available");
+/** "Available from 1 March" for coming-soon units with a date; "" otherwise. */
+export const availNote = (p) => {
+  const k = availOf(p);
+  if (k === "rented") return "Rented";
+  if (k !== "soon") return "";
+  if (!p.availableFrom) return "Available soon";
+  const d = new Date(p.availableFrom + "T00:00:00");
+  return `Available from ${d.toLocaleDateString("en-GB", { day: "numeric", month: "long", ...(d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) })}`;
+};
+/** Link to a building's own page, which lists every unit there. */
+export const buildingHref = (name) => `building.html?name=${encodeURIComponent(name)}`;
+export const modesOf = (p) => [p.stayTypes?.nightly && "stay", p.stayTypes?.monthly && "rent", p.sale && "sale"].filter(Boolean);
+export const typeOfMode = (m) => (m === "rent" ? "monthly" : "nightly");
+/** Main price for a mode, or null when that mode isn't offered. */
+export function priceOf(p, mode) {
+  if (mode === "sale") return p.sale ? p.sale.price || 0 : null;
+  return p.stayTypes?.[typeOfMode(mode)]?.price ?? null;
+}
+/** ₱4.5M style for big sale prices on cards; full figure elsewhere. */
+export function bigMoney(site, n) {
+  if (n >= 1e6) return `${site.currency}${(Math.round(n / 1e4) / 100).toLocaleString("en-PH")}M`;
+  return money(site, n);
+}
+
+/**
+ * Who guests and buyers talk to about a listing. Each listing can carry its own owner (or agent)
+ * with their own contact details; listings without one are handled by the CK Haven team.
+ */
+export function ownerOf(site, p) {
+  const o = p.owner;
+  if (o?.name) {
+    return {
+      own: true, name: o.name, initial: o.name.trim()[0] || "?", role: o.role || "Owner", photo: "", bio: o.bio || "",
+      languages: o.languages || [], yearsHosting: o.yearsHosting || 0, responseRate: o.responseRate || "", cohosts: [],
+      responseTime: o.responseTime || "",
+      contact: { phone: o.phone || "", email: o.email || "", whatsapp: o.whatsapp || "", viber: o.viber || "", messenger: o.messenger || "" },
+    };
+  }
+  const h = site.host || {};
+  return { own: false, ...h, role: "Host", languages: h.languages || [], cohosts: h.cohosts || [], responseTime: site.contact?.responseTime || "", contact: site.contact || {} };
+}
+
+/**
+ * One listing card for the browse grid (home page and "More places" on listing pages).
+ * opts: mode ("stay" | "rent" | "sale"; the old type "nightly" | "monthly" still works),
+ * search ({ in, out, guests } or null), off (reason it doesn't fit the search).
+ */
+export function listingCard(site, avail, p, { mode, type, search = null, off = "" } = {}) {
+  const modes = modesOf(p);
+  let m = mode || (type === "monthly" ? "rent" : type === "nightly" ? "stay" : null);
+  if (!modes.includes(m)) m = modes[0] || "stay";
+  const where = placeOf(p);
+  const shots = [{ src: p.cover, alt: p.name }, ...(p.tour || []).map((r) => r.photos[0]).filter((ph) => ph && ph.src !== p.cover)].filter((ph) => ph.src).slice(0, 5);
+  const total = (p.tour || []).reduce((n, room) => n + room.photos.length, 0) || 1;
+  const q = new URLSearchParams({ id: p.id, mode: m, ...(search && m === "stay" ? { in: search.in, out: search.out, guests: search.guests } : {}) });
+  const sub = p.title.includes(" · ") ? p.title.split(" · ").slice(1).join(" · ") : p.summary || categoryLabel(p);
+  let tag, tagCls = "", specs, price, small;
+  const area = (v) => (v ? `<li>${icons.area}<b>${esc(v)}</b></li>` : "");
+  const rooms = p.bedrooms || p.baths ? `<li>${icons.bed}<b>${p.bedrooms}</b> bd</li><li>${icons.bath}<b>${p.baths}</b> ba</li>` : "";
+  if (m === "sale") {
+    const s = p.sale;
+    tag = off || `For sale · ${categoryLabel(p)}`;
+    specs = `${rooms}${area(s.floorArea || p.size)}${s.lotArea ? `<li>${icons.leaf}<b>${esc(s.lotArea)}</b> lot</li>` : ""}`;
+    price = s.price ? `<b>${bigMoney(site, s.price)}</b>` : `<b>Price on request</b>`;
+    small = [s.negotiable && "Negotiable", s.financing].filter(Boolean).map(esc).join(" · ") || "&nbsp;";
+  } else {
+    const st = p.stayTypes[typeOfMode(m)];
+    const synced = calendarSynced(site, p);
+    const tonight = m === "stay" && synced && nextFreeNight(bookedNights(avail, p.id)) === todayISO();
+    const nights = search ? nightsBetween(search.in, search.out) : 0;
+    tag = off || (search && m === "stay" ? (synced ? "Free for your dates" : "Ask for your dates") : tonight ? "Available tonight" : `${m === "rent" ? "For rent" : "Stay"} · ${categoryLabel(p)}`);
+    tagCls = off ? " off" : (search && m === "stay" && synced) || tonight ? " ok" : "";
+    specs = `${rooms}${m === "stay" ? `<li>${icons.users}<b>${p.guests}</b> guests</li>` : ""}${area(p.size)}`;
+    price = `${st.confirmed ? "" : "From "}<b>${money(site, st.price)}</b> / ${m === "rent" ? "month" : "night"}`;
+    const other = m === "stay" ? p.stayTypes.monthly : p.stayTypes.nightly;
+    small = search && m === "stay" ? `About ${money(site, st.price * nights)} for ${nights} night${nights === 1 ? "" : "s"}`
+      : m === "rent" ? esc(st.note || (other ? `Also nightly from ${money(site, other.price)}` : `Minimum ${Math.max(1, Math.round((st.minNights || 30) / 30))} month${(st.minNights || 30) > 45 ? "s" : ""}`))
+      : other ? `Monthly from ${money(site, other.price)}` : "&nbsp;";
+  }
+  return `
+    <article class="lc lcard-wrap${off ? " is-off" : ""}" data-unit="${esc(p.id)}" data-mode="${m}">
+      <div class="lc-media">
+        <div class="lc-track">${shots.map((ph, i) => pic(ph.src, ph.alt, { sizes: "(max-width:640px) 100vw, 380px", lazy: i > 0 })).join("")}</div>
+        <span class="pc-tag${tagCls}${m === "sale" && !off ? " sale" : ""}">${esc(tag)}</span>
+        <span class="pc-count">${icons.camera}<span data-count>1</span> / ${total}</span>
+        <button type="button" class="lc-arrow prev" data-step="-1" aria-label="Previous photo" hidden>${icons.chevL}</button>
+        <button type="button" class="lc-arrow next" data-step="1" aria-label="Next photo"${shots.length < 2 ? " hidden" : ""}>${icons.chevR}</button>
+      </div>
+      <div class="lc-body">
+        <div class="lc-price"><div>${price}</div>${p.rating && m !== "sale" ? `<span class="lc-rate" title="${p.rating.count} reviews on ${esc(p.rating.source || "")}"><span class="score sm">${p.rating.value}</span><small>${p.rating.count} reviews</small></span>` : `<span class="pc-new">New</span>`}</div>
+        <ul class="specs">${specs}</ul>
+        <h3><a class="pc-link" href="property.html?${q}">${esc(p.name)}</a> <span class="lc-sub">· ${esc(sub)}</span></h3>
+        <p class="lc-loc">${icons.pin}<span>${p.building ? `<a class="lc-bldg" href="${buildingHref(buildingOf(p))}">${esc(p.building)}</a>, ` : ""}${esc([p.area?.split(",")[0], where.city].filter((x) => x && x !== p.building).filter((x, i, arr) => arr.indexOf(x) === i).join(", "))}</span></p>
+        ${small && small !== "&nbsp;" ? `<p class="lc-note">${small}</p>` : ""}
+      </div>
+    </article>`;
+}
+
+/** The "own a unit? we can manage it" card at the end of every grid. */
+export function ownerTile(mode) {
+  const what = mode === "sale" ? "Selling a condo or house?" : mode === "stay" ? "Have a unit that could host guests?" : "Own a unit you'd like rented out?";
+  return `<a class="lc lc-owner" href="owners.html"><div><span class="lc-owner-ic">${icons.home}</span><b>${what}</b><p>We find the tenants or guests, collect the rent and take care of cleaning and repairs.</p><span class="u">Property management ›</span></div></a>`;
+}
+
+/** Photo arrows and the "1 / 17" counter on listing cards inside `root`. */
+export function wireCards(root) {
+  root.querySelectorAll(".lcard-wrap").forEach((w) => {
+    const track = w.querySelector(".lc-track");
+    if (!track) return;
+    const n = track.children.length;
+    track.addEventListener("scroll", () => {
+      const i = Math.round(track.scrollLeft / track.clientWidth);
+      w.querySelector("[data-count]").textContent = i + 1;
+      w.querySelector(".prev").hidden = i === 0;
+      w.querySelector(".next").hidden = i >= n - 1;
+    }, { passive: true });
+  });
+  if (root.dataset.wired) return;
+  root.dataset.wired = "1";
+  root.addEventListener("click", (e) => {
+    const step = e.target.closest("[data-step]");
+    if (!step) return;
+    const track = step.closest(".lcard-wrap").querySelector(".lc-track");
+    track.scrollBy({ left: track.clientWidth * Number(step.dataset.step), behavior: "smooth" });
+  });
+}
+
+/** Word for a 5-point guest score, shown next to the score badge. */
+export function scoreWord(v) {
+  return v >= 4.5 ? "Excellent" : v >= 4 ? "Very good" : v >= 3.5 ? "Good" : "Guest rating";
+}
+
+/** Thin contact bar above the header (phone, email, response time). Filled from site.json so the admin can change it. */
+export function topbar(site) {
+  const c = site.contact || {};
+  const el = $(".topbar .wrap");
+  navMenu();
+  if (!el) return;
+  el.innerHTML = `
+    <div class="tb">
+      ${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${icons.phone}${esc(c.phone)}</a>` : ""}
+      ${c.email ? `<a class="tb-mail" href="mailto:${esc(c.email)}">${icons.mail}${esc(c.email)}</a>` : ""}
+    </div>
+    <span class="tb-note">Homes for rent and short stays in Cagayan de Oro ·<a href="owners.html">Owners: talk to us</a> ·<a href="tenants.html#repair">Report a repair</a></span>`;
+}
+
+/** Marks the current page in the main menu and opens and closes the phone menu. */
+function navMenu() {
+  const page = document.body.dataset.page;
+  if (page) $(`.nav [data-nav="${page}"]`)?.setAttribute("aria-current", "page");
+  const btn = $(".nav-toggle"), nav = $("#site-nav");
+  if (!btn || !nav) return;
+  const set = (open) => { btn.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("nav-open", open); };
+  btn.addEventListener("click", () => set(btn.getAttribute("aria-expanded") !== "true"));
+  nav.addEventListener("click", (e) => { if (e.target.closest("a")) set(false); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape") set(false); });
+}
+
 export function footer(site) {
   const c = site.contact || {};
   const el = $(".site-footer .wrap");
   if (!el) return;
+  const shown = (site.properties || []).filter((p) => p.status !== "hidden");
+  const count = (m) => shown.filter((p) => modesOf(p).includes(m)).length;
+  const bldgs = [...new Set(shown.filter((p) => (p.building || "").trim()).map((p) => p.building.trim()))];
   el.innerHTML = `
-    <div>
-      <div>© ${new Date().getFullYear()} ${esc(site.brand)} · One Oasis, Cagayan de Oro</div>
-      <div class="small" style="margin-top:4px">${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a> · ` : ""}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div>
+    <div class="f-grid f-grid5">
+      <div class="f-brand">
+        <a class="logo" href="index.html" aria-label="${esc(site.brand)} home"><span class="word">${esc(site.brand)}</span><span class="sub">Cagayan de Oro</span></a>
+        <p>${esc(site.tagline || "Well-kept homes for rent and short stays in Cagayan de Oro.")}</p>
+        <div class="socials">
+          ${c.facebook ? `<a href="${esc(c.facebook)}" target="_blank" rel="noopener" aria-label="Facebook">${icons.fb}</a>` : ""}
+          ${c.instagram ? `<a href="${esc(c.instagram)}" target="_blank" rel="noopener" aria-label="Instagram">${icons.ig}</a>` : ""}
+          ${c.messenger ? `<a href="https://m.me/${esc(c.messenger)}" target="_blank" rel="noopener" aria-label="Messenger">${icons.ms}</a>` : ""}
+        </div>
+      </div>
+      <div><h4>Company</h4><ul>
+        <li><a href="about.html">About us</a></li>
+        <li><a href="properties.html">Our properties</a></li>
+        ${bldgs.slice(0, 3).map((b) => `<li><a href="${buildingHref(b)}">${esc(b)}</a></li>`).join("")}
+        <li><a href="contact.html">Contact</a></li>
+      </ul></div>
+      <div><h4>Rentals</h4><ul>
+        <li><a href="units.html">Availability</a></li>
+        ${count("rent") ? `<li><a href="units.html?mode=rent">Monthly rentals</a></li>` : ""}
+        ${count("stay") ? `<li><a href="units.html?mode=stay">Short stays</a></li>` : ""}
+        <li><a href="contact.html?about=viewing">Schedule a viewing</a></li>
+      </ul></div>
+      <div><h4>Owners</h4><ul>
+        <li><a href="owners.html">Property management</a></li>
+        <li><a href="owners.html#services">Services</a></li>
+        <li><a href="contact.html?about=owner">Tell us about your property</a></li>
+      </ul></div>
+      <div><h4>Residents</h4><ul>
+        <li><a href="tenants.html#repair">Report a repair</a></li>
+        <li><a href="tenants.html#ask">Ask a question</a></li>
+        <li><a href="tenants.html#urgent">Urgent problems</a></li>
+        ${c.phone ? `<li><a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a></li>` : ""}
+      </ul></div>
     </div>
-    <div class="socials">
-      ${c.facebook ? `<a href="${esc(c.facebook)}" target="_blank" rel="noopener" aria-label="Facebook">${icons.fb}</a>` : ""}
-      ${c.instagram ? `<a href="${esc(c.instagram)}" target="_blank" rel="noopener" aria-label="Instagram">${icons.ig}</a>` : ""}
-      ${c.messenger ? `<a href="https://m.me/${esc(c.messenger)}" target="_blank" rel="noopener" aria-label="Messenger">${icons.ms}</a>` : ""}
-    </div>`;
+    <div class="f-bottom"><span>© ${new Date().getFullYear()} ${esc(site.brand)}. All rights reserved.</span><span>Property management and rentals · Cagayan de Oro, Philippines</span></div>`;
 }
 
 export function timeAgo(isoStr) {
@@ -175,6 +444,10 @@ export const icons = {
   chevR: S('<path d="m9 18 6-6-6-6"/>', 'stroke-width="2.4"'),
   heart: S('<path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.4 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4h2C13.8 6.1 15.2 5 17.2 5c3.5 0 5.6 3.4 4.3 6.7C19.5 16.4 12 21 12 21Z"/>'),
   share: S('<path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>'),
+  camera: S('<path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/>'),
+  area: S('<path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/>'),
+  bath: S('<path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5ZM6 12V5a2 2 0 0 1 4 0M7 20l-1 2M17 20l1 2"/>'),
+  search: S('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', 'stroke-width="2.4"'),
   grid: S('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
   pool: S('<path d="M2 18c1.7 0 1.7-1 3.3-1s1.7 1 3.4 1 1.6-1 3.3-1 1.7 1 3.3 1 1.7-1 3.4-1 1.6 1 3.3 1M2 22c1.7 0 1.7-1 3.3-1s1.7 1 3.4 1 1.6-1 3.3-1 1.7 1 3.3 1 1.7-1 3.4-1 1.6 1 3.3 1M8 15V5a2 2 0 0 1 4 0M16 15V5a2 2 0 0 0-4 0M8 9h8M8 13h8"/>'),
   key: S('<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/>'),

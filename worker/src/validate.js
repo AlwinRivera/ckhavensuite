@@ -28,17 +28,25 @@ const num = (v, path, min, max) => {
   if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max) throw bad(`${path} must be a number from ${min} to ${max}.`);
 };
 
+const CATEGORIES = new Set(["condo", "house", "townhouse", "apartment", "room", "lot", "commercial", "resort"]);
+const OWNER_ROLES = new Set(["Owner", "Agent", "Broker", "Property manager", "Host"]);
+
+/** Phone, chat and email details: for the site itself and for each listing's owner. */
+function checkContact(c, who) {
+  for (const k of ["phone", "whatsapp", "viber"]) if (c[k] && !/^[+\d\s()-]{0,24}$/.test(c[k])) throw bad(`${who} ${k} can only contain digits, spaces and +.`);
+  if (c.messenger && !/^[A-Za-z0-9.]{1,64}$/.test(c.messenger)) throw bad(`${who} Messenger name can only contain letters, numbers and dots.`);
+  if (c.email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(c.email)) throw bad(`${who} email address doesn't look right.`);
+}
+
 export function validateSite(site) {
   if (!site || typeof site !== "object" || Array.isArray(site)) throw bad("The site data is missing.");
-  if (JSON.stringify(site).length > 400000) throw bad("The site data is too big.");
+  // GitHub's file API reads files up to 1 MB, so the site data has to stay under that.
+  if (JSON.stringify(site).length > 950000) throw bad("The site data is too big. Remove old hidden listings or unused photos and try again.");
   walk(site, "");
   if (!site.brand || typeof site.brand !== "string") throw bad("The business name can't be empty.");
-  const c = site.contact || {};
-  for (const k of ["phone", "whatsapp", "viber"]) if (c[k] && !/^[+\d\s()-]{0,24}$/.test(c[k])) throw bad(`Contact ${k} can only contain digits, spaces and +.`);
-  if (c.messenger && !/^[A-Za-z0-9.]{1,64}$/.test(c.messenger)) throw bad("Messenger page name can only contain letters, numbers and dots.");
-  if (c.email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(c.email)) throw bad("That email address doesn't look right.");
+  checkContact(site.contact || {}, "Contact");
   if (!Array.isArray(site.properties) || !site.properties.length) throw bad("There must be at least one property.");
-  if (site.properties.length > 30) throw bad("Too many properties.");
+  if (site.properties.length > 200) throw bad("Too many properties.");
   const ids = new Set();
   site.properties.forEach((p, i) => {
     const at = `Property ${i + 1}`;
@@ -47,19 +55,61 @@ export function validateSite(site) {
     ids.add(p.id);
     if (!p.title || !p.name) throw bad(`${at}: the name and title can't be empty.`);
     const types = Object.entries(p.stayTypes || {});
-    if (!types.length) throw bad(`${p.name}: offer at least short stays or monthly rentals.`);
+    if (!types.length && !p.sale) throw bad(`${p.name}: offer short stays, monthly rent or a sale price.`);
     for (const [t, st] of types) {
       if (!["nightly", "monthly"].includes(t)) throw bad(`${p.name}: unknown stay type ${t}.`);
       num(st.price, `${p.name} ${t} price`, 0, 10000000);
       num(st.minNights, `${p.name} ${t} minimum nights`, 1, 365);
     }
+    if (p.sale) {
+      if (typeof p.sale !== "object" || Array.isArray(p.sale)) throw bad(`${p.name}: the sale details are garbled.`);
+      num(p.sale.price, `${p.name} sale price`, 0, 5000000000);
+    }
+    if (p.pets != null && !["", "yes", "no", "ask"].includes(p.pets)) throw bad(`${p.name}: pets must be yes, no or ask.`);
+    if (p.category != null && p.category !== "" && !CATEGORIES.has(p.category)) throw bad(`${p.name}: unknown property type ${p.category}.`);
+    if (p.owner) {
+      if (typeof p.owner !== "object" || Array.isArray(p.owner)) throw bad(`${p.name}: the owner details are garbled.`);
+      if (p.owner.role && !OWNER_ROLES.has(p.owner.role)) throw bad(`${p.name}: unknown owner role.`);
+      checkContact(p.owner, `${p.name} owner`);
+    }
     for (const k of ["guests", "bedrooms", "beds", "baths"]) num(p[k], `${p.name} ${k}`, 0, 50);
     if (p.map) { num(p.map.lat, `${p.name} latitude`, -90, 90); num(p.map.lon, `${p.name} longitude`, -180, 180); }
+    if (p.availability != null && !["", "available", "rented", "soon"].includes(p.availability)) throw bad(`${p.name}: availability must be available, rented or coming soon.`);
+    if (p.availableFrom && !ISO.test(p.availableFrom)) throw bad(`${p.name}: the "available from" date must look like 2027-01-31.`);
     if (!Array.isArray(p.tour)) throw bad(`${p.name}: the photo rooms are missing.`);
     // A hidden draft can start with no photos; a live listing needs at least one.
     if (p.status !== "hidden" && !p.tour.some((r) => r.photos?.length)) throw bad(`${p.name}: add at least one photo before it goes live.`);
   });
+  if (site.buildings != null) {
+    if (!Array.isArray(site.buildings)) throw bad("The properties list is garbled.");
+    const names = new Set();
+    site.buildings.forEach((b, i) => {
+      if (!b || typeof b !== "object" || Array.isArray(b)) throw bad(`Building ${i + 1} is garbled.`);
+      const name = String(b.name || "").trim();
+      if (!name) throw bad(`Building ${i + 1}: the name can't be empty.`);
+      if (names.has(name.toLowerCase())) throw bad(`There are two buildings called "${name}".`);
+      names.add(name.toLowerCase());
+      if (b.amenities != null && !Array.isArray(b.amenities)) throw bad(`${name}: amenities must be a list.`);
+    });
+  }
   return site;
+}
+
+/** A message from the website's contact form. Same trimming and caps as listing requests. */
+const WHO = new Set(["looking", "viewing", "resident", "owner", "other"]);
+export function validateEnquiry(b) {
+  if (!b || typeof b !== "object" || Array.isArray(b)) throw bad("The form was empty.");
+  const str = (k, max = 200) => String(b[k] ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+  const e = {
+    name: str("name", 80), phone: str("phone", 24),
+    who: WHO.has(b.who) ? b.who : "other",
+    unit: /^[a-z0-9-]{2,48}$/.test(b.unit || "") ? b.unit : "",
+    msg: String(b.msg ?? "").replace(/\r/g, "").trim().slice(0, 3000),
+  };
+  if (!e.name) throw bad("Add your name.");
+  if (!e.msg) throw bad("Add a message.");
+  checkContact(e, "Your");
+  return e;
 }
 
 export function validateBooking(b, site) {
@@ -69,6 +119,36 @@ export function validateBooking(b, site) {
   if (!(nights >= 1 && nights <= 366)) throw bad("A booking must be 1 to 366 nights.");
   const label = String(b.label || "Direct booking").slice(0, 60);
   return { property: b.property, start: b.start, end: b.end, label };
+}
+
+/**
+ * A "List your property" form from the public website. Only known fields are kept, every value is
+ * trimmed and capped, and the person must give at least one way to reach them.
+ */
+export function validateSubmission(b) {
+  if (!b || typeof b !== "object" || Array.isArray(b)) throw bad("The form was empty.");
+  const str = (k, max = 200) => String(b[k] ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+  const long = (k, max = 3000) => String(b[k] ?? "").replace(/\r/g, "").trim().slice(0, max);
+  const n = (k, max) => { const v = Number(b[k]); return Number.isFinite(v) && v >= 0 && v <= max ? v : 0; };
+  const s = {
+    name: str("name", 80), role: OWNER_ROLES.has(b.role) ? b.role : "Owner",
+    phone: str("phone", 24), email: str("email", 120), messenger: str("messenger", 64), whatsapp: str("whatsapp", 24), viber: str("viber", 24),
+    modes: (Array.isArray(b.modes) ? b.modes : []).filter((m) => ["stay", "rent", "sale"].includes(m)),
+    category: CATEGORIES.has(b.category) ? b.category : "",
+    title: str("title", 120), province: str("province", 60), locality: str("locality", 60), area: str("area", 120), building: str("building", 80),
+    bedrooms: n("bedrooms", 50), baths: n("baths", 50), guests: n("guests", 50), size: str("size", 40), lotArea: str("lotArea", 40),
+    nightly: n("nightly", 10000000), monthly: n("monthly", 10000000), salePrice: n("salePrice", 5000000000),
+    pets: ["yes", "no", "ask"].includes(b.pets) ? b.pets : "", manage: b.manage === true,
+    description: long("description"), photos: long("photos", 1500), links: long("links", 1000),
+  };
+  if (!s.name) throw bad("Add your name.");
+  if (!s.phone && !s.email && !s.messenger) throw bad("Add a phone number, email or Messenger name so we can reach you.");
+  checkContact(s, "Your");
+  if (!s.modes.length) throw bad("Pick at least one: short stays, monthly rent or for sale.");
+  if (!s.title) throw bad("Give your property a short name.");
+  if (!s.locality || !s.province) throw bad("Add the city or town and the province.");
+  if (b.agree !== true) throw bad("Please confirm you own the property or are allowed to list it.");
+  return s;
 }
 
 /** Uploaded photo bytes must really be JPEG or WebP. */

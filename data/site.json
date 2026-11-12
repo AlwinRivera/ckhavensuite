@@ -1,6 +1,6 @@
 {
   "brand": "CK Haven",
-  "tagline": "Your cozy haven at One Oasis, Cagayan de Oro",
+  "tagline": "A small property management company in Cagayan de Oro. We rent out and look after furnished homes.",
   "currency": "₱",
   "demo": false,
   "siteUrl": "https://alwinrivera.github.io/ckhavensuite/",
@@ -9,12 +9,10 @@
   },
   "adminApi": "",
   "home": {
-    "headline": "Your cozy haven in the heart of CDO.",
-    "intro": "Ground-floor 1-bedroom at One Oasis with a private garden, heated pool access and everything you need, for a night or a month.",
-    "locationTitle": "A garden hideaway in the middle of the city",
-    "locationText": "You're on the ground floor, steps from your own leafy patio, inside a resort-style complex with 24/7 security. Malls, restaurants, hospitals and BPO offices are minutes away.",
-    "contactTitle": "Questions? Message us.",
-    "contactText": "Ask about long stays, early check-in, parking or group bookings."
+    "headline": "Furnished homes in Cagayan de Oro, looked after like our own.",
+    "intro": "Viewing, moving in, a broken aircon, renewing, moving out. One small team handles all of it, and you always know who to call.",
+    "contactTitle": "Let's talk",
+    "contactText": "Looking for a place, living in one of ours, or thinking about handing us your unit? Tell us what you need."
   },
   "contact": {
     "phone": "+63 906 506 2589",
@@ -41,22 +39,57 @@
       "Filipino"
     ]
   },
+  "buildings": [
+    {
+      "name": "One Oasis",
+      "area": "Brgy. Camaman-an, Cagayan de Oro",
+      "locality": "Cagayan de Oro",
+      "province": "Misamis Oriental",
+      "description": [],
+      "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures. Laguindingan International Airport is about 34 km away.",
+      "amenities": [
+        "Shared heated outdoor pool, 8 AM – 8 PM (₱200 per adult, ₱100 per child)",
+        "Kids’ pool",
+        "Free gym",
+        "Kids’ play area",
+        "Elevator",
+        "24/7 security",
+        "Parking (₱300/night)"
+      ],
+      "photo": "assets/img/listing/pool-hd.jpg",
+      "map": {
+        "google": "https://www.google.com/maps/place/One+Oasis+Cagayan+de+oro/@8.4781131,124.6597766,785m/data=!3m1!1e3!4m6!3m5!1s0x32fff2c63fb3ad77:0x93c07e418b9604b0!8m2!3d8.4781131!4d124.6597766!16s%2Fg%2F11b6dvgf3m?entry=ttu",
+        "lat": 8.4781131,
+        "lon": 124.6597766,
+        "zoom": 16
+      },
+      "photos": [
+        {
+          "src": "assets/img/listing/playground.jpg",
+          "alt": "Kids playground on the One Oasis grounds"
+        }
+      ]
+    }
+  ],
   "properties": [
     {
       "id": "ck-haven-suite",
       "name": "CK Haven",
       "title": "CK Haven · 1BR garden condo with pool access",
       "kind": "Entire condo",
+      "category": "condo",
       "status": "live",
       "building": "One Oasis",
       "area": "Brgy. Camaman-an, Cagayan de Oro",
       "address": "Rosario Limketkai Ave, Brgy. Camaman-an, Cagayan de Oro 9000",
       "city": "Cagayan de Oro, Philippines",
+      "locality": "Cagayan de Oro",
+      "province": "Misamis Oriental",
       "map": {
         "lat": 8.4781131,
         "lon": 124.6597766,
         "zoom": 16,
-        "google": "https://www.google.com/maps/place/One+Oasis+Cagayan+de+oro/@8.4781131,124.6597766,17z/data=!4m6!3m5!1s0x32fff2c63fb3ad77:0x93c07e418b9604b0!8m2!3d8.4781131!4d124.6597766"
+        "google": "https://www.google.com/maps/place/One+Oasis+Cagayan+de+oro/@8.4781131,124.6597766,785m/data=!3m1!1e3!4m6!3m5!1s0x32fff2c63fb3ad77:0x93c07e418b9604b0!8m2!3d8.4781131!4d124.6597766!16s%2Fg%2F11b6dvgf3m?entry=ttu"
       },
       "neighborhood": "In the heart of CDO's business district with 24/7 security, minutes from malls, restaurants, nightlife, hospitals, churches and BPO offices. About a 15-minute walk to the Museum of Three Cultures. Laguindingan International Airport is about 34 km away.",
       "summary": "Ground-floor 28 m² 1-bedroom condo at One Oasis with a private garden patio, 50\" smart TV, full kitchen, free gym and shared heated pool.",
@@ -217,7 +250,7 @@
           "note": "Shared pool · Free gym · 24/7 guarded gate",
           "photos": [
             {
-              "src": "assets/img/listing/pool.jpg",
+              "src": "assets/img/listing/pool-hd.jpg",
               "alt": "One Oasis swimming pool and clubhouse at dusk"
             },
             {
@@ -261,6 +294,12 @@
           "poster": "assets/video/pro/kitchen-bath.jpg",
           "title": "Kitchen & bathroom",
           "length": "0:09"
+        },
+        {
+          "src": "assets/video/pro/garden.mp4",
+          "poster": "assets/video/pro/garden.jpg",
+          "title": "Garden patio",
+          "length": "0:04"
         }
       ],
       "amenities": [
@@ -436,14 +475,38 @@
         "lateCheckout": "Need a late checkout? Message us as early as you can."
       },
       "faq": [
-        { "q": "Is the pool free to use?", "a": "The pool and kids’ pool are open 8 AM – 8 PM and cost ₱200 per adult and ₱100 per child, paid at the pool. Tell us ahead and we can get your tickets ready. The gym is free." },
-        { "q": "How do I pay?", "a": "Nothing is charged on this website. Send a request, and we confirm availability and the final price in chat, then send GCash or bank details for the deposit." },
-        { "q": "How do I check in?", "a": "Check-in is 2:00 – 5:00 PM with a self check-in lockbox. Your unit number and lockbox code are sent once your booking is confirmed." },
-        { "q": "Can I check in early or check out late?", "a": "Message us as early as you can and we’ll let you know if the unit is free." },
-        { "q": "Is there parking?", "a": "Yes, secure parking is ₱300 a night. Let us know ahead so we can arrange it." },
-        { "q": "Can friends visit, or stay over?", "a": "Visitors are welcome until 8 PM. Extra overnight guests are ₱300 each, up to 4 guests in total." },
-        { "q": "Do you do monthly stays?", "a": "Yes. Monthly rentals start at ₱23,000 for 30 nights or more, with utilities billed separately." },
-        { "q": "Can I work from the unit?", "a": "Yes. There’s fast Wi-Fi, an Ethernet connection and a dedicated workspace." }
+        {
+          "q": "Is the pool free to use?",
+          "a": "The pool and kids’ pool are open 8 AM – 8 PM and cost ₱200 per adult and ₱100 per child, paid at the pool. Tell us ahead and we can get your tickets ready. The gym is free."
+        },
+        {
+          "q": "How do I pay?",
+          "a": "Nothing is charged on this website. Send a request, and we confirm availability and the final price in chat, then send GCash or bank details for the deposit."
+        },
+        {
+          "q": "How do I check in?",
+          "a": "Check-in is 2:00 – 5:00 PM with a self check-in lockbox. Your unit number and lockbox code are sent once your booking is confirmed."
+        },
+        {
+          "q": "Can I check in early or check out late?",
+          "a": "Message us as early as you can and we’ll let you know if the unit is free."
+        },
+        {
+          "q": "Is there parking?",
+          "a": "Yes, secure parking is ₱300 a night. Let us know ahead so we can arrange it."
+        },
+        {
+          "q": "Can friends visit, or stay over?",
+          "a": "Visitors are welcome until 8 PM. Extra overnight guests are ₱300 each, up to 4 guests in total."
+        },
+        {
+          "q": "Do you do monthly stays?",
+          "a": "Yes. Monthly rentals start at ₱23,000 for 30 nights or more, with utilities billed separately."
+        },
+        {
+          "q": "Can I work from the unit?",
+          "a": "Yes. There’s fast Wi-Fi, an Ethernet connection and a dedicated workspace."
+        }
       ],
       "channels": {
         "airbnb": {
@@ -494,7 +557,9 @@
           "room": "Resort amenities"
         }
       ],
-      "size": "28 m²"
+      "size": "28 m²",
+      "availability": "available",
+      "availableFrom": ""
     }
   ]
 }

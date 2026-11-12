@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Availability · CK Haven</title>
+  <meta name="description" content="Condos and homes for rent, short stays and homes for sale from CK Haven in Cagayan de Oro and Mindanao. Filter by budget, bedrooms and pets, and see them on a map.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://alwinrivera.github.io/ckhavensuite/units.html">
+  <link rel="canonical" href="https://alwinrivera.github.io/ckhavensuite/units.html">
+  <meta property="og:title" content="Availability · CK Haven">
+  <meta property="og:description" content="Units for rent, short stays and homes for sale, managed by CK Haven.">
+  <meta property="og:image" content="https://alwinrivera.github.io/ckhavensuite/assets/brand/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#f6f3ed">
+  <link rel="icon" href="assets/brand/favicon.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="units">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="logo" href="index.html" aria-label="CK Haven home"><span class="word">CK Haven</span><span class="sub">Cagayan de Oro</span></a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav"><span class="nt-bars" aria-hidden="true"><i></i><i></i><i></i></span><span>Menu</span></button>
+      <nav class="nav" id="site-nav" aria-label="Main">
+        <a href="about.html" data-nav="about">About</a>
+        <a href="properties.html" data-nav="properties">Properties</a>
+        <a href="units.html" data-nav="units">Availability</a>
+        <a href="owners.html" data-nav="owners">Owners</a>
+        <a href="tenants.html" data-nav="tenants">Residents</a>
+        <a class="btn btn-primary btn-sm" href="contact.html" data-nav="contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head page-head-dark photo-head">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><i>›</i><span>Availability</span></nav>
+        <div class="eyebrow">Availability</div>
+        <h1 class="display-2">Homes available now</h1>
+        <p class="lead">Furnished, managed by us, ready to move into. See one in person before you decide.</p>
+      </div>
+    </section>
+
+    <section class="v7-sec v7-avail">
+      <div class="wrap">
+        <form class="v7-filter" id="filter" aria-label="Filter available homes">
+          <label><span>Looking for</span><select name="mode" id="f-mode" data-fancy><option value="">Any</option></select></label>
+          <label><span>Property</span><select name="building" id="f-bldg" data-fancy><option value="">All properties</option></select></label>
+          <label><span>Bedrooms</span><select name="beds" data-fancy><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option></select></label>
+          <p class="v7-count" id="count" aria-live="polite"></p>
+        </form>
+        <div class="v7-units" id="units"></div>
+      </div>
+    </section>
+
+    <section class="v7-band">
+      <div class="wrap narrow">
+        <h2 class="v7-h2">Not the right fit?</h2>
+        <p class="v7-text">Tell us your budget, size and move-in date. We'll message you when something opens up.</p>
+        <div class="v7-band-links"><a class="v7-more" href="contact.html?about=looking">Tell us what you're looking for</a></div>
+      </div>
+    </section>
+  </main>
+
+
+<footer class="site-footer"><div class="wrap"></div></footer>
+  <script type="module" src="js/units.js"></script>
+</body>
+</html>

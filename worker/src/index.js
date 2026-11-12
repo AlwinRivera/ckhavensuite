@@ -3,7 +3,7 @@
 // Every change is committed to the GitHub repo; GitHub Pages republishes in about a minute.
 import { GitHubStore } from "./store-github.js";
 import { checkPassword, hashPassword, signToken, verifyToken } from "./auth.js";
-import { validateSite, validateBooking, checkImage } from "./validate.js";
+import { validateSite, validateBooking, validateSubmission, validateEnquiry, checkImage } from "./validate.js";
 
 const SITE = "data/site.json";
 const BOOKINGS = "data/direct-bookings.json";
@@ -50,6 +50,8 @@ async function route(req, env) {
   const m = req.method;
   if (pathname === "/" || pathname === "/api/health") return json({ ok: true, service: "ckhaven-admin" });
   if (m === "POST" && pathname === "/api/login") return login(req, env);
+  if (m === "POST" && pathname === "/api/submit") return submitListing(req, env);
+  if (m === "POST" && pathname === "/api/enquire") return submitEnquiry(req, env);
 
   const user = await requireUser(req, env);
   const s = store(env);
@@ -61,7 +63,94 @@ async function route(req, env) {
   if (m === "POST" && pathname === "/api/photos") return uploadPhoto(req, s, user);
   if (m === "GET" && pathname === "/api/history") return json({ changes: await s.history(SITE, 25) });
   if (m === "POST" && pathname === "/api/restore") return restore(req, s, user);
+  if (m === "GET" && pathname === "/api/submissions") return listSubmissions(env, user);
+  if (m === "POST" && pathname === "/api/submissions/status") return setSubmissionStatus(req, env, user);
+  if (m === "DELETE" && pathname === "/api/submissions") return deleteSubmission(req, env, user);
+  if (m === "GET" && pathname === "/api/enquiries") return listEnquiries(env);
+  if (m === "POST" && pathname === "/api/enquiries/status") return setEnquiryStatus(req, env, user);
+  if (m === "DELETE" && pathname === "/api/enquiries") return deleteEnquiry(req, env);
   throw fail(404, "Not found.");
+}
+
+// ---------------- contact-form enquiries ----------------
+// The website's contact form opens the visitor's own chat app; it also files a copy here so the
+// team has one inbox of viewing requests and questions. Same private store as listing requests,
+// under "enq:". Co-hosts can read these too: they answer residents and viewings.
+async function submitEnquiry(req, env) {
+  const db = kv(env);
+  const ip = req.headers.get("CF-Connecting-IP") || "local";
+  await rateLimit(env, `enquire:${ip}`, 10, 3600);
+  const raw = await body(req);
+  if (raw.website) return json({ ok: true });
+  const enq = validateEnquiry(raw);
+  const id = `${Date.now().toString(36)}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`;
+  await db.put(`enq:${id}`, JSON.stringify({ id, date: new Date().toISOString(), status: "new", ...enq }), { expirationTtl: 180 * 86400 });
+  return json({ ok: true, id });
+}
+async function listEnquiries(env) {
+  const db = kv(env);
+  const keys = (await db.list({ prefix: "enq:", limit: 300 })).keys;
+  const all = (await Promise.all(keys.map((k) => db.get(k.name)))).filter(Boolean).map((t) => JSON.parse(t));
+  all.sort((a, b) => b.date.localeCompare(a.date));
+  return json({ enquiries: all });
+}
+async function setEnquiryStatus(req, env, user) {
+  const db = kv(env);
+  const { id, status } = await body(req);
+  if (!["new", "done"].includes(status)) throw fail(400, "Unknown status.");
+  const text = /^[a-z0-9-]{4,40}$/.test(id || "") && (await db.get(`enq:${id}`));
+  if (!text) throw fail(404, "That message can't be found.");
+  const enq = { ...JSON.parse(text), status, handledBy: status === "done" ? user.name : "", handledAt: new Date().toISOString() };
+  await db.put(`enq:${id}`, JSON.stringify(enq), { expirationTtl: 180 * 86400 });
+  return json({ ok: true, enquiry: enq });
+}
+async function deleteEnquiry(req, env) {
+  const { id } = await body(req);
+  if (!/^[a-z0-9-]{4,40}$/.test(id || "")) throw fail(400, "Unknown message.");
+  await kv(env).delete(`enq:${id}`);
+  return json({ ok: true });
+}
+
+// ---------------- "List your property" submissions ----------------
+// Kept in a private KV namespace (SUBMISSIONS), never in the public repo: they hold people's phone
+// numbers and emails. Nothing is published until the owner approves one in the admin.
+const kv = (env) => { if (!env.SUBMISSIONS) throw fail(503, "Listing requests aren't switched on yet. Message us instead."); return env.SUBMISSIONS; };
+async function submitListing(req, env) {
+  const db = kv(env);
+  const ip = req.headers.get("CF-Connecting-IP") || "local";
+  await rateLimit(env, `submit:${ip}`, 5, 3600);
+  const raw = await body(req);
+  if (raw.website) return json({ ok: true }); // honeypot: bots fill every field, people never see this one
+  const sub = validateSubmission(raw);
+  const id = `${Date.now().toString(36)}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`;
+  await db.put(`sub:${id}`, JSON.stringify({ id, date: new Date().toISOString(), status: "new", ...sub }), { expirationTtl: 180 * 86400 });
+  return json({ ok: true, id });
+}
+async function listSubmissions(env, user) {
+  ownerOnly(user);
+  const db = kv(env);
+  const keys = (await db.list({ prefix: "sub:", limit: 200 })).keys;
+  const all = (await Promise.all(keys.map((k) => db.get(k.name)))).filter(Boolean).map((t) => JSON.parse(t));
+  all.sort((a, b) => b.date.localeCompare(a.date));
+  return json({ submissions: all });
+}
+async function setSubmissionStatus(req, env, user) {
+  ownerOnly(user);
+  const db = kv(env);
+  const { id, status, propertyId } = await body(req);
+  if (!["new", "approved", "rejected"].includes(status)) throw fail(400, "Unknown status.");
+  const text = /^[a-z0-9-]{4,40}$/.test(id || "") && (await db.get(`sub:${id}`));
+  if (!text) throw fail(404, "That request can't be found.");
+  const sub = { ...JSON.parse(text), status, decidedBy: user.name, decidedAt: new Date().toISOString(), ...(propertyId ? { propertyId: String(propertyId).slice(0, 48) } : {}) };
+  await db.put(`sub:${id}`, JSON.stringify(sub), { expirationTtl: 180 * 86400 });
+  return json({ ok: true, submission: sub });
+}
+async function deleteSubmission(req, env, user) {
+  ownerOnly(user);
+  const { id } = await body(req);
+  if (!/^[a-z0-9-]{4,40}$/.test(id || "")) throw fail(400, "Unknown request.");
+  await kv(env).delete(`sub:${id}`);
+  return json({ ok: true });
 }
 
 // ---------------- auth ----------------
